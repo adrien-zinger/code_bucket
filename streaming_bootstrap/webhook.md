@@ -257,4 +257,4 @@ for _ in range(0, 100):
     time.sleep(0.02)
 ```
 
-<b>[&larr; data structures](streaming.md)</b><b style="margin-left: 30px">[polling &rarr;](polling.md)</b>
+<b>[&larr; data structures](streaming.md)</b>&emsp;&emsp;<b style="margin-left: 30px">[polling &rarr;](polling.md)</b>
