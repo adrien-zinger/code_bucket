@@ -89,8 +89,8 @@ _Cons_: This is a tree.
 ### Some words about webhooks
 In a P2P network, making webhooks is a classical solution to keep clients informed
 from what is happenning on our node. This is
-writen and explained in many books like [Designing Web APIs]
-(https://www.amazon.it/Designing-Web-APIs-Building-Developers/dp/1492026921),
+writen and explained in many books like
+[Designing Web APIs](https://www.amazon.it/Designing-Web-APIs-Building-Developers/dp/1492026921),
 and often the best solution in a real time context like live bootstrapping.
 
 Each time you'll search for some "streaming" or "notification" solution, you'll
