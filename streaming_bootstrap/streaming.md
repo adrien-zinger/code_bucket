@@ -1,12 +1,4 @@
-# Bootstraping algorithms
-
-The database of the program can be represented (and is represented) as an
-HashMap. To be specific, it's a BTreeMap, that works, unsurprisingly, exactly
-like an HashMap, with the the main differences:
-
-- Creates a kind of binary tree
-- Has cheap reallocation
-- Is ordered by keys
+# Bootstrap a database in realtime
 
 ## Data structures
 
@@ -14,7 +6,6 @@ The database can be seen as a datastructure. The classical storage of data is
 a kind o hashmap or a relational key-value structure. Hashmap are optimized to
 be fast and very safe to use. But doesn't respect the mandatory requirement of
 a realtime streaming: _Ordering_.
-
 
 ### Hashmap
 
@@ -63,6 +54,12 @@ is very difficults to find, and can have disastrous impacts on a bootstrap
 algorithm.
 
 ### BTreeMap
+
+In comparaison to an HashMap, a BTreeMap:
+- creates a kind of binary tree
+- has cheap reallocation
+- is ordered by key
+
 
 ```rust
 fn main() {
