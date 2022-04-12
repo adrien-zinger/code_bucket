@@ -57,6 +57,7 @@ program will have the same key ordering.
 
 _Pro_: That situation is benefic, keys are _"prehashed"_ and keeps order
 consistency. The classical maps operations are as faster as possible.
+
 _Cons_: You should be carefull with the hashing function, a little miss
 is very difficults to find, and can have disastrous impacts on a bootstrap
 algorithm.
@@ -82,6 +83,7 @@ tree. It takes advantage of memory pages to be fast, but `get` and `insert`
 are always a search in a tree.
 
 _Pro_: We don't have to maintain a hash function.
+
 _Cons_: This is a tree.
 
 ## Webhooks solution
