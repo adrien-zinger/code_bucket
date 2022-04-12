@@ -352,7 +352,9 @@ Polling can be used when you don't need real-time updates, which cause frequent
 changes in data and can crash your system if you decide to receive updates every
 single time something changes.
 
-![](webhooks_vs_polling.png)
+<p align="center">
+  <img width="400" src="webhooks_vs_polling.png">
+</p>
 
 As you can see, polling take much more bandwidth than his cousin webhooks. This
 is the reason why we prefer to think at webhooks when we have a realtime
