@@ -324,12 +324,12 @@ difficult to maintain, is more flexible and avoid desynchronisation problems
 in some cases. The stale detection, is more precise but can lead to hard
 consistency bugs and has to be tested strongly before being in production.
 
-> The two strategies are welcome in the [github repository](), as well we could
+> The two strategies are welcome in the [github repository](https://github.com/adrien-zinger/bootstrap_webhook_sample), as well we could
 > judge wich one is more concise and maintanable.
 
 ### Tests
 
-You can look to the full code in this [github repository](). Some test cases
+You can look to the full code in this [github repository](https://github.com/adrien-zinger/bootstrap_webhook_sample). Some test cases
 are described in the readme. Basically, we initialize one or two DB with
 randoms data. Then with the help of a python script like just below, we run in
 parralell some bootstraping nodes. After a while, we stop the python script
