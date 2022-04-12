@@ -51,3 +51,5 @@ We will see in the solution, why the client has to be fast.
 ### Solution
 
 Waiting for the snippet implementation
+
+<b>[&larr; webhook](webhook.md)</b>
