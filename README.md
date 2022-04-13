@@ -12,4 +12,4 @@ Rendered html: [here](https://htmlpreview.github.io/?https://github.com/adrien-z
 Snippet repositories:
   - with a webhook strategy [here](https://github.com/adrien-zinger/bootstrap_webhook_sample)
 
-Full markdown presentation: [here](https://github.com/adrien-zinger/presentations/blob/main/streaming_bootstrap/streaming.md)
+Full markdown presentation: [here](https://github.com/adrien-zinger/presentations/blob/main/streaming_bootstrap/index.md)
