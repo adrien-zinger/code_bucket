@@ -24,9 +24,9 @@ me think that after some fixes it would looks like a stack of patches. But can
 be enough in a small point-to-point or a simple structured network.
 
 ## Contribute
-You can contribute to the different projects we have just seen with issues and
-PR if you feel the need to add something. Any question is welcolm and will
-help to increase the quality of the article.
+You can contribute to the different projects we have just seen by posting issues and
+PR. Any question is welcolmes and will
+help to increase the quality of the post.
 
 Do not fall into the trap that consist of multiplying the optimizations. For
 that case, a comment is better than a PR.
