@@ -166,4 +166,4 @@ pub fn diff(&self, head: u32 /*, begin, end indexes */) -> Vec<EntryModif> {
 
 You can find the full source code in the github repository [here](https://github.com/adrien-zinger/bootstrap_polling_sample).
 
-<b>[&larr; webhook](webhook.md)</b>&emsp;&emsp;<b style="margin-left: 30px">[notes &rarr;](nodes.md)</b>
+<b>[&larr; webhook](webhook.md)</b>&emsp;&emsp;<b style="margin-left: 30px">[notes &rarr;](notes.md)</b>
