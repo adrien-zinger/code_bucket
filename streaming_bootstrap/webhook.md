@@ -2,8 +2,8 @@
 
 ### Some words about webhooks
 In a P2P network, making webhooks is a classical solution to keep clients informed
-from what is happenning on our node. This is
-writen and explained in many books like
+from what is happening on our node. This is
+written and explained in many books like
 [Designing Web APIs](https://www.amazon.it/Designing-Web-APIs-Building-Developers/dp/1492026921),
 and often the best solution in a real time context like live bootstrapping.
 
@@ -12,19 +12,19 @@ Returning to our initial problem, whatever solution you choose, ordering is the
 main deal. Once you have a deterministic order, you can stream in every
 contexts.
 
-A casual example of a bootstrap streaming of two instances. Immagine you have
+A casual example of a bootstrap streaming of two instances. Imagine you have
 two programs that keep a kind of cache consistency security. If one instance
 crash, you always have the second one that store in his instance a cash of the
-datas.
+data.
 
 Start with a server that give the following endpoints:
 - size: return the size of the database
 - bootstrap: register to the remote node that we need to bootstrap.
-             take my entry point, a starting index, and a end index
+             take my entry point, a starting index, and an end index
 - insert: Take an Update(key, value) or a Delete(key) entry
 
 Before reading that, you should be aware of [hyper](https://hyper.rs) and his
-simple server syntax. I choose that solution because it's fast to implements
+simple server syntax. I decide that solution because it's fast to implements
 and easy to read.
 
 ```rust
@@ -43,11 +43,11 @@ and easy to read.
 (&Method::GET, "/size") => Ok(Response::new(Body::from(format!("{}", db.len().await)))),
 ```
 
-The bootstrap route is the start of a bootstraping strategy, it will activate
+The bootstrap route is the start of a bootstrapping strategy, it will activate
 the webhook for our node and start to stream in real time the database.
 
 The loop that will send a stream is limited with a _Period_, a constant used in
-the code to limit the bandwith and also the usage of the database, shared
+the code to limit the bandwidth and also the usage of the database, shared
 between multiple threads, for our example. The loop will be launched just once
 and will run since the end of the program life.
 
@@ -111,14 +111,14 @@ limit.
 If you visit the repository, you can also find some ways to improve the
 implementation.
 
-- remove the oldests subscribers, maybe an auto remove if stale. [Staling chapter](###Staling)
+- remove the oldest subscribers, maybe an auto remove if stale. [Staling chapter](###Staling)
 - limit the number of subscriptions
-- put all forward_all in an `UnorderedFutures` list to profit of concurrency
+- put all forward_all in an `UnorderedFutures` list to profit of concurrency.
 
 > That could be a great improvement if someone wanted to implement that ;-)
 
 
-Too finish to present the solution, I have to introduce you to the _"/insert"_
+To finish presenting the solution, I have to introduce you to the _"/insert"_
 route. As I said before, the insertion take an `Delete` or an `Update`. The
 insertions are managed as an update, so all the `CRUD` (excepted for the
 _Read_) are managed.
@@ -138,11 +138,11 @@ _Read_) are managed.
 ```
 
 The remove and the update are basically the same, just, one call a remove on
-our database, and another call an insert. Each one will look at our subscribers
+our database and another call an insert. Each one will look at our subscribers
 that are streaming the db in the particular chunk of the map.
 **That is why we're very interested about memory ordering deterministic**. We
 can say if we already sent the value, thanks to the index, and resend it if we
-want the remote streamer to be up to date.
+want the remote streamer to be up-to-date.
 
 ```rust
 // inform the bootstrapers of an update
@@ -162,14 +162,14 @@ for subscriber in guard.subscribers.iter() {
 }
 ```
 
-The end value can be linked to the end of the database, on subscribe to the DB,
-if the `end` is the same as `data.len()`, we will always use the full len to
+The end value can be linked to the end of the database, when subscribing to the DB,
+if the `end` is the same as `data.len()`, we will always use the full length to
 keep consistency at the right part of the memory that can overflow the index
 of `end` for the last chunks.
 
-Finally, the subscribtion part! There is two possible implementation. One is
+Finally, the subscription part! There are two possible implementation. One is
 to bootstrap from one node only (the current example). The other split the
-bootstrap between multiple database that theorically are synchronized copies.
+bootstrap between multiple database that theoretically are synchronized copies.
 
 ```rust
 pub async fn _subscribe_to_one(to_addr: String, my_addr: String) {
@@ -195,34 +195,34 @@ pub async fn _subscribe_multiple(to_addr: &[String], my_addr: String) {
 ```
 
 The multiple subscription simply share his request between multiple nodes
-offering the bootstrap route. Instead, the monosubscription ask only to one
+offering the bootstrap route. Instead, the "mono-subscription" ask only to one
 node. Both are working, but both need a possible "retry" management in case
 the remote nodes crashed.
 
 ### Staling
 
-In the previous part, we saw how a subscriber is linked to the DB, but we
-didn't defined when a DB can dismiss one of these.
+In the previous part, we saw how a subscriber link to the DB, but we
+didn't define when a DB can dismiss one of these.
 
-One strategy, adapted to a blockchain, would be to give an heartbeat timeout to
+One strategy, adapted to a blockchain, would be to give a heartbeat timeout to
 the subscriber. Each new information sent by our local node to a DB keep alive
 the subscriber. Since his heartbeat is alright, we continue to send him new
 information, and then we can remove him from the subscriber's list.
 
-But here, we have to insert an heartbeat strategy that can take some heavy
+But here, we have to insert a heartbeat strategy that can take some heavy
 lines of code.
 
 Another strategy, is to stop to inform a subscriber when he start to be
 informed by another node!
 
 In other words, when the bootstrap is about to finish, the subscriber can
-connect itself to the main network, or the main feeder. He can absolutelly be
+connect itself to the main network, or the main feeder. He can absolutely be
 informed from multiple sources.
 
-If the _"/insert"_ can return a `True` or `False` value, respectivelly, he
-accept the new insertion or he's already aware of the modification. The node
+If the _"/insert"_ can return a `True` or `False` value, respectively, he
+accept the new insertion, or he's already aware of the modification. The node
 that help the bootstrap know that the subscriber has joined the network, and
-can be notifyed as _Stale_ when the _index_ reach the _end_.
+can be notified as _Stale_ when the _index_ reach the _end_.
 
 _Bootstrap phase_:
 ![bootstrap phase](befor_stale.svg)
@@ -230,9 +230,9 @@ _Bootstrap phase_:
 _Stale phase_:
 ![staling phase](become_stale.svg)
 
-In conclusion, both methods are possible depending of the topology and the
-nature of the database you're sharing. The heartbeat, even if it seem
-difficult to maintain, is more flexible and avoid desynchronisation problems
+In conclusion, both methods are possible depending on the topology and the
+nature of the database you're sharing. The heartbeat, even if it seems
+difficult to maintain, is more flexible and avoid desynchronization problems
 in some cases. The stale detection, is more precise but can lead to hard
 consistency bugs and has to be tested strongly before being in production.
 
@@ -244,9 +244,9 @@ consistency bugs and has to be tested strongly before being in production.
 
 You can look to the full code in this
 [github repository](https://github.com/adrien-zinger/bootstrap_webhook_sample).
-Some test cases are described in the readme. Basically, we initialize one or two DB with
+Some test cases are described in the README. Basically, we initialize one or two DB with
 randoms data. Then with the help of a python script like just below, we run in
-parralell some bootstraping nodes. After a while, we stop the python script
+parallel, some bootstrapping nodes. After a while, we stop the python script
 and we check if values are the same for each instance of linked DB.
 
 ```py
