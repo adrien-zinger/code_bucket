@@ -8,7 +8,7 @@ writen and explained in many books like
 and often the best solution in a real time context like live bootstrapping.
 
 ### Solution
-Focus on our initial problem, whatever solution you choose, ordering is the
+Returning to our initial problem, whatever solution you choose, ordering is the
 main deal. Once you have a deterministic order, you can stream in every
 contexts.
 
@@ -236,13 +236,15 @@ difficult to maintain, is more flexible and avoid desynchronisation problems
 in some cases. The stale detection, is more precise but can lead to hard
 consistency bugs and has to be tested strongly before being in production.
 
-> The two strategies are welcome in the [github repository](https://github.com/adrien-zinger/bootstrap_webhook_sample), as well we could
-> judge wich one is more concise and maintanable.
+> The two strategies are welcome in the
+> [github repository](https://github.com/adrien-zinger/bootstrap_webhook_sample),
+> as well we could judge wich one is more maintanable.
 
 ### Tests
 
-You can look to the full code in this [github repository](https://github.com/adrien-zinger/bootstrap_webhook_sample). Some test cases
-are described in the readme. Basically, we initialize one or two DB with
+You can look to the full code in this
+[github repository](https://github.com/adrien-zinger/bootstrap_webhook_sample).
+Some test cases are described in the readme. Basically, we initialize one or two DB with
 randoms data. Then with the help of a python script like just below, we run in
 parralell some bootstraping nodes. After a while, we stop the python script
 and we check if values are the same for each instance of linked DB.
@@ -257,4 +259,4 @@ for _ in range(0, 100):
     time.sleep(0.02)
 ```
 
-<b>[&larr; data structures](streaming.md)</b>&emsp;&emsp;<b style="margin-left: 30px">[polling &rarr;](polling.md)</b>
+<b>[&larr; data structures](index.md)</b>&emsp;&emsp;<b style="margin-left: 30px">[polling &rarr;](polling.md)</b>
