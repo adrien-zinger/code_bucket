@@ -1,12 +1,12 @@
 ## About the two solutions
 In an unstructured P2P network, we can find a lot of
-topologycal issues. I'm not qualifyed to guaranty that there is no corner cases
+topological issues. I'm not qualified to guaranty that there is no corner cases
 for the both solutions.
 
 In production, a strong verification of the data consistency, with
-a continous checksum computation for example, would be very smart. For example,
+a continuous checksum computation, for example, would be very smart. For example,
 you can register all modification on time and compute the BTreeMap checksum
-continously, remembering the previous checksum.
+continuously, remembering the previous checksum.
 
 ```py
     # SharedDB parameter `checksum`, initially 0u32
@@ -19,13 +19,13 @@ continously, remembering the previous checksum.
 ```
 
 
-The bandwitdh and the limitations that the polling include in his solution make
-me think that after some fixes it would looks like a stack of patches. But can
+The bandwidth and the limitations that the polling include in his solution make
+me think that after some fixes it would look like a stack of patches. But can
 be enough in a small point-to-point or a simple structured network.
 
 ## Contribute
 You can contribute to the different projects we have just seen by posting issues and
-PR. Any question is welcolmes and will
+PR. Any question is welcomes and will
 help to increase the quality of the post.
 
 Do not fall into the trap that consist of multiplying the optimizations. For
