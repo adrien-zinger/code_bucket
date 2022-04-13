@@ -11,10 +11,10 @@ single time something changes.
 </p>
 
 As you can see, polling take much more bandwidth than his cousin webhooks. This
-is the reason why we prefer to think at webhooks when we have a realtime
+is the reason we prefer to think at webhooks when we have a real-time
 problem. But the solution can be adopted if you don't care about speed and timing.
 
-A famous tool used today in production use polling, maybe you now git? If
+A famous tool used today in production use polling, maybe you know git? If
 you're interested about how git http servers work today, have a look on their
 protocol! [git-http-protocol](https://www.git-scm.com/docs/http-protocol)
 
@@ -39,11 +39,11 @@ get a diff.
 
 ![](polling_flowchart.svg)
 
-The head track an history of modifications. Each time the DB is updated, the
+The head tracks historic of modifications. Each time the DB is updated, the
 head move and if we can't recompute the diff in a reasonable time, we store the
 modification in cache too. In the chart here, a client is about to bootstrap
-the database. But between the first ask, and the send of a chunk, there is no
-guaranty that database hasn't been updated. So the we need to send also
+the database. But between the first and the second ask, there is no
+guaranty that database hasn't been updated. So the need to send also
 _diff(head_asked, db_head)_, and the new _head_ before asking another chunk.
 
 We will see in the solution, why the client has to be fast.
@@ -52,7 +52,7 @@ We will see in the solution, why the client has to be fast.
 
 As the previous solution, we use some routes for our shared database. But we
 changed some of these. Now, we have seen that in the chart in
-[the head chapter](###head), we need to now the head. So we replaced the
+[the head chapter](###head), we need to know the head. So we replaced the
 `/size` route by `/info`. The command return a tuple (head, size) that will
 initialize our copy database.
 
@@ -74,7 +74,7 @@ bootstrap progression status.
 ```
 
 The ShareDB, has also been updated, now, when we receive some modifications, we
-notify the cache that something has just been modifyed and we keep an history
+notify the cache that something has just been modified, and we keep an history
 of the modifications. When we append something into the cache, we update the
 head of the database. As well, fetchers can be aware of any new entries between
 two fetch commands.
@@ -122,24 +122,24 @@ itself if he is enough up to date (in a _Stale_ state).
 
 ### Bandwidth, speed and multithreading
 
-Polling takes bandwitdh, consider that instead of one call, we need to
-continously fetch chunks of datas and keep a local state.
+Polling takes bandwidth, consider that instead of one call, we need to
+continuously fetch chunks of data and keep a local state.
 
 We cannot just increase the fetch calls period, because in a real production,
-the cache just can't contains all modifications. Imagin that the bootstraper
-node (the one that fetch), makes too much times between two fetches:
+the cache just can't contain all modifications. Imagine that the bootstrapper
+node (the one that fetch), makes too many times between two fetches:
 The remote can have lost some historic modifications and there is no reasonable
-way to retrieve them. So the fetcher is forced to restart a full bootstrap.
+way to retrieve them. So the fetcher need to restart a full bootstrap.
 
-The multithreading of the boostrap is not as easy than the webhook solution.
-If the head increase monotonically, we can update ourself with the
+The multithreading of the bootstrap is not as easy as the webhook solution.
+If the head increase monotonically, we can update ourselves with the
 `max_in(res_heads)`. But the bandwidth will jump if we split the calls between
 remote nodes for the reason explained just in the next paragraph.
 
 You can notice that we don't care about the localization in memory of the diff.
 We always send all modifications, whatever the index in the database. Consider
 limiting us to the asked chunk, or a new _begin/end_ limit. The complexity of
-the filter will be very high. If you think about that, it also force us to
+the filter will be very high. If you think about that, it also forces us to
 limit the size of the cache buffer.
 
 ```rust
