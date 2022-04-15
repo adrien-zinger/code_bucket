@@ -91,19 +91,17 @@ limit.
 ```rust
     pub async fn send_chunks(&self) {
         let mut guard = self.0.lock().await;
-        let data = &guard.data;
-        let mut indexes = vec![];
-        for s in guard.subscribers.iter() {
-            if s.index == s.end { // bootstrap already done
+        for s in 0..guard.subscribers.len() {
+            if guard.subscribers[s].index == guard.subscribers[s].end {
                 continue;
             }
-            let chunk_size = min(MAX_CHUNK_SIZE, s.end - s.index);
-            let modifs = take_chunk(data, s.index, chunk_size);
-            forward_all(&s.addr, &modifs).await;
-            indexes.push(s.index + chunk_size);
-        }
-        for (s, index) in indexes.iter().enumerate() {
-            guard.subscribers[s].index = *index;
+            let chunk_size = min(
+                MAX_CHUNK_SIZE,
+                guard.subscribers[s].end - guard.subscribers[s].index,
+            );
+            let modifs = take_chunk(&guard.data, guard.subscribers[s].index, chunk_size);
+            forward_all(&guard.subscribers[s].addr, &modifs).await;
+            guard.subscribers[s].index += chunk_size;
         }
     }
 ```
