@@ -4,6 +4,9 @@
 const _graphical = {
     _d: 4,
 
+    /**
+     * Draw the point
+     */
     draw() {
         this.pos[0] += randomGaussian(0, 1 / this._d);
         this.pos[1] += randomGaussian(0, 1 / this._d);

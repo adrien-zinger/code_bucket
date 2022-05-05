@@ -23,13 +23,11 @@ const _impl = {
      */
     insertOpKey(key) {
         // todo check if we can remove the lower rated if cache size overflow
-        // todo optim find with a map of known opid
+        // todo optimize find with a map of known operation id
         if (this.owned.findIndex(e => e == key) > - 1) return;
 
         const index = this.known.findIndex(e => e[0] === key);
-        //console.log(this.known.map(e => e[0]))
         index === -1 ? this.known.push([key, 0]) : this.known[index][1]++;
-        //console.log("after", this.known.map(e => e[0]))
         this.known.sort((a, b) => a[1] > b[1])
     },
     /**
@@ -54,7 +52,7 @@ const _impl = {
         }
     },
     /**
-     * Peek, retreive the most famous color in the network!
+     * Peek, retrieve the most famous color in the network!
      */
     peek() {
         if (this.known.length === 0) return;
@@ -113,7 +111,7 @@ const Node = {
             owned: [],
             // colors a node know in the network,
             // filled by `insertOpKey` and pop when
-            // a node is getted. The list looks like [[color_index], []...]
+            // a node is get. The list looks like [[color_index], []...]
             known: [],
             // index in conns, of the latest node we inform about the
             // `owned[owned_index]` color.
@@ -133,9 +131,6 @@ const Node = {
         let r = range(0, NODE_NUMBER);
         nodes.forEach(node => {
             let s = r.sort((a, b) => node.dist(nodes[a]) - node.dist(nodes[b]));
-            //if (node.index === 0) {
-            //    console.log(s.map(e => node.dist(nodes[e])))
-            //}
             node.conns = s.slice(0, MAX_CONNS);
         });
     }
