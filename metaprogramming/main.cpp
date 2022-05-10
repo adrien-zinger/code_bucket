@@ -1,8 +1,6 @@
 #include <iostream>
-template<typename T>                                                           
-class t_to_string<T> {
-	std::string to_string(const T& self);
-};                                             
+#include "trait.h"
+#include <string>
 
 struct A {                                                               
 	A(std::string a): str(a) {};
@@ -10,14 +8,14 @@ struct A {
 };
 
 template<>
-struct t_to_string<A> {                                              
-	std::string to_string(const A& self) {                           
+struct trait_to_string<A> {                                              
+	static std::string to_string(const A& self) {                           
 		return self.str;                                      
 	}                                                                
 };
 
 int main() {
-
-	std::cout << "Hello World!";
+	A a(std::string("hello"));
+	std::cout << trait_to_string<A>::to_string(a);
 	return 0;
 }
