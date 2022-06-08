@@ -1,0 +1,7 @@
+[package]
+name="c_classes"
+version="0.1.0"
+
+[dev]
+opt = ["-g"]
+sources = ["main.c"]
