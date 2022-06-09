@@ -47,7 +47,13 @@ fn bar() -> MyResult<String, &'static str> {
     MyResult::Err("This is an error")
 }
 
-fn foo() -> MyResult<String, &'static str> {
+//
+// #[ReslutEnumumu
+// fn foo(x: Wrapped<T>) -> Unwraped<T, dyn Err> {
+//   x? // first Err return bxy a Result OR first None return NoneErr OR T
+// }
+
+fn foo() -> MyResult<dyn ToString, &'static str> {
     let _ = bar()?;
     MyResult::Some(String::from("hello world"))
 }
