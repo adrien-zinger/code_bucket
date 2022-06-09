@@ -34,9 +34,6 @@ void * new(const void * _class, ...) {
   return p;
 }
 
-//const void * CString = (const void * ) MString;
-
-
 /**** IMPLEMENTATION DE LA CLASSE STRING ***/
 const void * String;
 
