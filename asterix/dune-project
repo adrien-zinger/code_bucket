@@ -1,0 +1,12 @@
+(lang dune 3.2)
+
+(name asterix)
+
+(generate_opam_files false)
+
+(using menhir 2.1)
+
+(package
+ (name asterix)
+ (depends ocaml dune menhir)
+)

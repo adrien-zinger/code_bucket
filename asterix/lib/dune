@@ -1,0 +1,11 @@
+(menhir
+ (modules parser))
+
+(ocamllex lexer)
+
+(library
+ (name asterix)
+ (modules parser lexer json)
+
+ (libraries core stdio)
+)
