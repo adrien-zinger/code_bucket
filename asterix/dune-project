@@ -8,5 +8,5 @@
 
 (package
  (name asterix)
- (depends ocaml dune menhir)
+ (depends ocaml dune menhir stdio)
 )

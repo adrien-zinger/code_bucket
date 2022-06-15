@@ -2,9 +2,10 @@
 
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    ocaml
-    ocamlPackages.menhir # it also include ocamllex
     dune_3
+    ocaml
     ocamlPackages.core
+    ocamlPackages.findlib
+    ocamlPackages.menhir # it also include ocamllex
     ocamlPackages.stdio
   ];}
