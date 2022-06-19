@@ -1,3 +1,37 @@
+(*
+
+
+/* -------------------------------------------------------
+   The grammar symbols
+   ------------------------------------------------------- */
+%token  WORD
+%token  ASSIGNMENT_WORD
+%token  NAME
+%token  NEWLINE
+%token  IO_NUMBER
+
+
+/* The following are the operators (see XBD Operator)
+   containing more than one character. */
+%token  AND_IF    OR_IF    DSEMI
+/*      '&&'      '||'     ';;'    */
+%token  DLESS  DGREAT  LESSAND  GREATAND  LESSGREAT  DLESSDASH
+/*      '<<'   '>>'    '<&'     '>&'      '<>'       '<<-'   */
+%token  CLOBBER
+/*      '>|'   */
+/* The following are the reserved words. */
+%token  If    Then    Else    Elif    Fi    Do    Done
+/*      'if'  'then'  'else'  'elif'  'fi'  'do'  'done'   */
+%token  Case    Esac    While    Until    For
+/*      'case'  'esac'  'while'  'until'  'for'   */
+/* These are reserved words, not operator tokens, and are
+   recognized when reserved words are recognized. */
+%token  Lbrace    Rbrace    Bang
+/*      '{'       '}'       '!'   */
+%token  In
+/*      'in'   */
+*)
+
 {
 open Lexing
 open Parser
@@ -18,92 +52,55 @@ let next_line lexbuf =
  *)
 let blank = [' ' '\t']+
 let word = ['a'-'z' 'A'-'Z' '0'-'9' '_']+
+let assignment_word = '=' ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let name = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let newline = '\r' | '\n' | "\r\n"
+let io_number = ['0'-'9']+ ['<' | '>']
 
-(* definition of metacharacters *)
-let pipe = '|'
-let _and = '&'
-let semicolon = ';'
-let l_parentesis = '('
-let r_parentesis = ')'
-let inf = '<'
-let sup = '>'
-(* blank and newline are also metacharacters already defined *)
-
-(* definition of control operators*)
-let double_pipe = "||"
-let double_and = "&&"
-let double_semicolon = ";;"
-let semicolon_and = ";&"
-let double_semicolon_and = ";;&"
-let pipe_and = "|&"
-(* & ; ( ) and newline are also control operators already defined *)
-
-(* definition of reserved words *)
-let exclamation = '!'
-let case = "case"
-let coproc = "coproc"
-let _do = "do"
-let _done = "done"
-let elif = "elif"
-let _else = "else"
-let esac = "esac"
-let fi = "fi"
-let _for = "for"
-let _function = "function"
-let _if = "if"
-let _in = "in"
-let select = "select"
-let _then = "then"
-let until = "until"
-let _while = "while"
-let l_brace = "{"
-let r_brace = "}"
-let time = "time"
-let l_brack = "[["
-let r_brack = "]]"
-
+(* X>    X>&Y   >&Y *)
+(*       3>  1<      *)
 (* define rules to read *)
 rule read =
   parse
   | blank                       { read lexbuf }
   | newline                     { next_line lexbuf; read lexbuf }
   | pipe                        { PIPE }
-  | _and                        { AND }
-  | semicolon                   { SEMICOLON }
-  | l_parentesis                { LEFT_PARENTESIS }
-  | r_parentesis                { RIGHT_PARENTESIS }
-  | inf                         { INF }
-  | sup                         { SUP }
-  | double_pipe                 { DOUBLE_PIPE }
-  | double_and                  { DOUBLE_AND }
-  | double_semicolon            { DOUBLE_SEMICOLON }
-  | semicolon_and               { SEMICOLON_AND }
-  | double_semicolon_and        { DOUBLE_SEMICOLON_AND }
-  | pipe_and                    { PIPE_AND }
-  | exclamation                 { EXCLAMATION }
-  | case                        { CASE }
-  | coproc                      { COPROC }
-  | _do                         { DO }
-  | _done                       { DONE }
-  | elif                        { ELIF }
-  | _else                       { ELSE }
-  | esac                        { ESAC }
-  | fi                          { FI }
-  | _for                        { FOR }
-  | _function                   { FUNCTION }
-  | _if                         { IF }
-  | _in                         { IN }
-  | select                      { SELECT }
-  | _then                       { THEN }
-  | until                       { UNTIL }
-  | _while                      { WHILE }
-  | l_brace                     { LEFT_BRACE }
-  | r_brace                     { RIGHT_BRACE }
-  | time                        { TIME }
-  | l_brack                     { LEFT_BRACK }
-  | r_brack                     { RIGHT_BRACK }
+  | "&&"                        { AND_IF }
+  | "||"                        { OR_IF }
+  | '|'                         { PIPE }
+  | '&'                         { AND }
+  | ';'                         { SEMI }
+  | ";;"                        { DSEMI }
+  | "<<"                        { DLESS }
+  | ">>"                        { DGRATE }
+  | "<&"                        { LESSAND }
+  | ">&"                        { GREATAND }
+  | "<>"                        { LESSGREAT }
+  | "<<-"                       { DLESSDASH }
+  | ">|"                        { CLOBBER }
+  | "if"                        { IF }
+  | "then"                      { THEN }
+  | "else"                      { ELSE }
+  | "fi"                        { FI }
+  | "do"                        { DO }
+  | "done"                      { DONE }
+  | "case"                      { CASE }
+  | "esac"                      { ESAC }
+  | "while"                     { WHILE }
+  | "until"                     { UNTIL }
+  | "for"                       { FOR }
+  | '{'                         { LBRACE }
+  | '}'                         { RBRACE }
+  | '!'                         { BANG }
+  | "in"                        { IN }
+  | '>'                         { GREAT }
+  | '<'                         { LESS }
+  | '('                         { LPAR }
+  | ')'                         { RPAR }
+  | assignment_word             { ASSIGNMENT_WORD (Lexing.lexeme lexbuf)  }
+  | io_number                   { IO_NUMBER       (Lexing.lexeme lexbuf)  }
+  | name                        { NAME            (Lexing.lexeme lexbuf)  }
+  | assignment_word             { ASSIGNMENT_WORD (Lexing.lexeme lexbuf)  }
   | word                        { WORD (Lexing.lexeme lexbuf) }
   | _ { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
   | eof      { EOF }
