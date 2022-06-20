@@ -55,7 +55,7 @@ let word = ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let assignment_word = '=' ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let name = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let newline = '\r' | '\n' | "\r\n"
-let io_number = ['0'-'9']+ ['<' | '>']
+let io_number = ['0'-'9']+ '<' | '>' ['0'-'9']+
 
 (* X>    X>&Y   >&Y *)
 (*       3>  1<      *)
@@ -64,7 +64,6 @@ rule read =
   parse
   | blank                       { read lexbuf }
   | newline                     { next_line lexbuf; read lexbuf }
-  | pipe                        { PIPE }
   | "&&"                        { AND_IF }
   | "||"                        { OR_IF }
   | '|'                         { PIPE }
@@ -72,7 +71,7 @@ rule read =
   | ';'                         { SEMI }
   | ";;"                        { DSEMI }
   | "<<"                        { DLESS }
-  | ">>"                        { DGRATE }
+  | ">>"                        { DGREAT }
   | "<&"                        { LESSAND }
   | ">&"                        { GREATAND }
   | "<>"                        { LESSGREAT }

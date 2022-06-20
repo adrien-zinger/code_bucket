@@ -37,12 +37,12 @@
 %token <string> WORD
 %token <string> NAME
 %token EOF
-%start <int> program
+%start <int option> program
 %%
 
 program:
-  | linebreak; complete_commands; linebreak { 0 }
-  | linebreak { 0 };
+  | linebreak; complete_commands; linebreak { Some 0 }
+  | linebreak { Some 0 };
 
 complete_commands:
   | complete_commands; newline_list; complete_command {}
@@ -92,25 +92,20 @@ compound_list:
   | linebreak; term; separator {} ;
 
 term:
-  | term              {}
-  | separator; and_or {}
-  | and_or            {} ;
+  | term; separator; and_or {}
+  | and_or                  {} ;
 
 for_clause:
   | FOR; name;                                            do_group {}
   | FOR; name;                            sequential_sep; do_group {}
   | FOR; name; linebreak; in_r;           sequential_sep; do_group {}
-  | FOR; name; linebreak; in_r; wordlist; sequential_sep; do_group {} ;
+  | FOR; name; linebreak; in_r; list(WORD); sequential_sep; do_group {} ;
 
 name:
   | NAME (* Apply rule 5 *) {} ;
 
 in_r:
   | IN (* Apply rule 6 *)   {} ;
-
-wordlist:
-  | wordlist; WORD {}
-  | WORD           {} ;
 
 case_clause:
   | CASE; WORD; linebreak; in_r; linebreak; case_list; ESAC    {}

@@ -3,7 +3,7 @@ open Agecanonix
 open Lexing
 
 let parse_with_error lexbuf =
-  try Parser.prog Lexer.read lexbuf with
+  try Parser.program Lexer.read lexbuf with
   | Parser.Error ->
     exit (-1)
 
