@@ -56,6 +56,7 @@ let assignment_word = '=' ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let name = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let newline = '\r' | '\n' | "\r\n"
 let io_number = ['0'-'9']+ '<' | '>' ['0'-'9']+
+let comment = '#' [^'\n']* '\n'
 
 (* X>    X>&Y   >&Y *)
 (*       3>  1<      *)
@@ -63,6 +64,7 @@ let io_number = ['0'-'9']+ '<' | '>' ['0'-'9']+
 rule read =
   parse
   | blank                       { read lexbuf }
+  | comment                     { next_line lexbuf; read lexbuf }
   | newline                     { next_line lexbuf; read lexbuf }
   | "&&"                        { AND_IF }
   | "||"                        { OR_IF }
