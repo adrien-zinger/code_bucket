@@ -20,7 +20,9 @@ struct Add<int, MyInt> { // Implement Add<int> for MyInt
   }
 };
 
-template<typename T>
-struct Add<T, MyInt> {
-  static MyInt add(const MyInt& self, const int& i);
-};
+
+// Problematic part, here
+// template<typename T>
+// struct Add<T, MyInt> {
+//   static MyInt add(const MyInt& self, const int& i);
+// };

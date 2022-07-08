@@ -1,0 +1,12 @@
+[package]
+name="my_int"
+version="0.1.0"
+
+[dependencies]
+AddTrait = { path = "../AddTrait" }
+
+[test]
+opt=["-lstdc++"]
+
+[lib]
+opt=["-lstdc++"]
