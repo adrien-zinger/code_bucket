@@ -1,0 +1,25 @@
+{
+  "name": "wasm_shared_memory",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests",
+    "asbuild:debug": "asc assembly/index.ts --target debug --importMemory --noExportMemory --maximumMemory 1 --sharedMemory --enable threads --runtime '/home/zing/Documents/repos/assemblyscript/std/assembly/rt/stub_import'",
+    "asbuild:release": "asc assembly/index.ts --target release --importMemory --noExportMemory --maximumMemory 1 --sharedMemory --enable threads --runtime '/home/zing/Documents/repos/assemblyscript/std/assembly/rt/stub_import'",
+    "asbuild": "npm run asbuild:debug && npm run asbuild:release",
+    "start": "npx serve ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "assemblyscript": "^0.21.3"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./build/release.js",
+      "types": "./build/release.d.ts"
+    }
+  }
+}
