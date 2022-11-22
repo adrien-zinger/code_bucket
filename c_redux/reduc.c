@@ -6,17 +6,35 @@
 
 static struct Reagir *map_reduc[__MAP_LEN] = {NULL};
 
-void dispatch(struct Reagir *re, void *arg)
+static void send_state(struct Reagir *re, struct __Entry e)
 {
     pthread_mutex_lock(&re->__mutex);
     while (re->__queue_len == __QUEUE_MAX_LEN)
         pthread_cond_wait(&re->__pop_condvar, &re->__mutex);
-    struct __Entry e = {re, arg};
     re->__queue[re->__push_ptr] = e;
     re->__push_ptr = (re->__push_ptr + 1) % __QUEUE_MAX_LEN;
     re->__queue_len++;
     pthread_cond_signal(&re->__push_condvar);
     pthread_mutex_unlock(&re->__mutex);
+}
+
+static struct __Entry receive_state(struct Reagir *re)
+{
+    pthread_mutex_lock(&re->__mutex);
+    while (re->__queue_len == 0)
+        pthread_cond_wait(&re->__push_condvar, &re->__mutex);
+    struct __Entry e = re->__queue[re->__pop_ptr];
+    re->__pop_ptr = (re->__pop_ptr + 1) % __QUEUE_MAX_LEN;
+    re->__queue_len--;
+    pthread_cond_signal(&re->__pop_condvar);
+    pthread_mutex_unlock(&re->__mutex);
+    return e;
+}
+
+void dispatch(struct Reagir *re, void *arg)
+{
+    struct __Entry e = {re, arg};
+    send_state(re, e);
 }
 
 static void *use_state_reducer(void *_, void *state)
@@ -139,14 +157,7 @@ void create(struct Reagir *(*r)(void), ...)
         struct Reagir *re = r();
         if (NULL == re)
             break;
-        pthread_mutex_lock(&re->__mutex);
-        while (re->__queue_len == 0)
-            pthread_cond_wait(&re->__push_condvar, &re->__mutex);
-        struct __Entry e = re->__queue[re->__pop_ptr];
-        re->__pop_ptr = (re->__pop_ptr + 1) % __QUEUE_MAX_LEN;
-        re->__queue_len--;
-        pthread_cond_signal(&re->__pop_condvar);
-        pthread_mutex_unlock(&re->__mutex);
+        struct __Entry e = receive_state(re);
         void *new_state = re->__reducer(re->state, e.arg);
         opt.on_state_change(&re->state, &new_state);
     }
