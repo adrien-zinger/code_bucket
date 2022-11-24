@@ -1,13 +1,18 @@
 #include <pthread.h> /* pthread_* */
 #include <stdlib.h>  /* malloc */
 #include <stdarg.h>  /* va_list, ... */
+#include <assert.h>  /* assert */
 
 #include "./reduc.h"
 
-static struct Reagir *map_reduc[__MAP_LEN] = {NULL};
+#include <stdio.h>
 
-static void send_state(struct Reagir *re, struct __Entry e)
+// FIXME: faire une vrai hashmap
+static struct Reagir *map_reagirs[__MAP_LEN] = {NULL};
+
+static void send_state(struct __Entry e)
 {
+    struct Reagir *re = e.reaction->__re;
     pthread_mutex_lock(&re->__mutex);
     while (re->__queue_len == __QUEUE_MAX_LEN)
         pthread_cond_wait(&re->__pop_condvar, &re->__mutex);
@@ -31,10 +36,10 @@ static struct __Entry receive_state(struct Reagir *re)
     return e;
 }
 
-void dispatch(struct Reagir *re, void *arg)
+void dispatch(struct Reaction *rea, void *arg)
 {
-    struct __Entry e = {re, arg};
-    send_state(re, e);
+    struct __Entry e = {rea, arg};
+    send_state(e);
 }
 
 static void *use_state_reducer(void *_, void *state)
@@ -42,95 +47,62 @@ static void *use_state_reducer(void *_, void *state)
     return state;
 }
 
-struct Reagir *
+struct Reaction *
 use_state(void *(*init)())
 {
     return use_reducer(use_state_reducer, init);
 }
 
-static struct Reagir *new_reduc(
+static struct Reaction *new_reaction(
+    void *init,
+    struct Reagir *re,
+    void *(*reducer)(void *, void *))
+{
+    struct Reaction *ret = malloc(sizeof(struct Reaction));
+    ret->state = init;
+    ret->__id = re->i;
+    ret->__re = re;
+    ret->__reducer = reducer;
+    return ret;
+}
+
+static struct Reaction *get_reaction(
     void *(*reducer)(void *state, void *action),
     void *init)
 {
-    struct Reagir *re = malloc(sizeof(struct Reagir));
-    re->state = init;
-    re->__reducer = reducer;
-    pthread_mutex_init(&re->__mutex, NULL);
-    pthread_cond_init(&re->__pop_condvar, NULL);
-    re->__pop_ptr = 0;
-    pthread_cond_init(&re->__push_condvar, NULL);
-    re->__push_ptr = 0;
-    re->__queue_len = 0;
-    return re;
+    unsigned long reid = pthread_self();
+    int i = (int)((unsigned long)reid % __MAP_LEN);
+    assert(map_reagirs[i] != NULL); // fires if no Reagir the thread
+
+    struct Reagir *re = map_reagirs[i];
+    if (re->len > re->i)
+        return re->content[re->i++];
+
+    if (re->capacity == re->len)
+    {
+        re->capacity *= 2;
+        re->content = realloc(
+            re->content,
+            sizeof(struct Reaction *) * re->capacity);
+    }
+
+    struct Reaction *ret = re->content[re->i] = new_reaction(init, re, reducer);
+    re->len++;
+    re->i++;
+    return ret;
 }
 
-struct Reagir *
+/**
+ * Creer une reaction de avec une fonction de reduction.
+ */
+struct Reaction *
 use_reducer(void *(*reducer)(void *state, void *action), void *(*init)())
 {
-    // FIXME, create real map with linked lists to avoid collisions
-    int i = (int)((unsigned long)init % __MAP_LEN);
-    if (map_reduc[i] == NULL)
-        map_reduc[i] = new_reduc(reducer, init());
-    return map_reduc[i];
+    return get_reaction(reducer, init());
 }
 
 /**
  * Fonction de changement d'état par défault.
- *
- * Si je me mets à écouter des entrées asynchrones qui peuvent utiliser mon
- * état à tout moment de mon execution, ce petit bout est très critique. Car
- * deux threads pourraient accéder à mon état parrallèlement, pendant que l'un
- * change le pointeur. Ce serait une source de bugs du genre du ABA, des
- * mauvais calculs, etc.
- *
- * L'exemple suivant montre une façon simple  de proteger mon état contre des
- * accès simultanés. Evidemment, chaque cas à sa spécificité. Pour mon exemple
- * je n'en ai pas besoin.
- *
- * Ex:
- * ```
- * void *locker(void *_, void *new_state)
- * {
- *     lock(&state_mutex);
- *     return new_state;
- * }
- *
- * struct Reagir re = use_reducer(locker, initializer);
- *
- * ...
- *
- * void my_on_state_change(void *dst, void *src)
- * {
- *     dst = src;
- *     unlock(&state_mutex);
- * }
- *
- * ...
- *
- * struct ReagirOpt opt;
- * opt.on_state_change = my_on_state_change;
- * create(state_machine, opt);
- * ```
- *
- * Si je souhaite utiliser des état sur ma pile au lieu de mon tas, c'est une
- * source de fuite mémoire possible. Ou bien on nétoie parrallèlement, ou bien
- * je redefinis cette fonction.
- *
- * Ex:
- * ```
- * void my_on_state_change(void *dst, void *src)
- * {
- *     void *tmp = dst;
- *     dst = src;
- *     free(tmp);
- * }
- *
- * ...
- *
- * struct ReagirOpt opt;
- * opt.on_state_change = my_on_state_change;
- * create(state_machine, opt);
- * ```
  *
  * Par defaut, je ne libère pas la mémoire et on je n'utilise
  * pas de mutex pour me proteger des races dans la lib. Je me
@@ -142,23 +114,45 @@ static void on_state_change(void **dst, void **src)
     *dst = *src;
 }
 
-void create(struct Reagir *(*r)(void), ...)
+struct Reagir *new_reagir(unsigned long id)
+{
+    struct Reagir *re = malloc(sizeof(struct Reagir));
+    re->capacity = 4;
+    re->len = 0;
+    re->content = malloc(re->capacity * sizeof(struct Reaction *));
+    re->id = id;
+    re->i = 0;
+    pthread_mutex_init(&re->__mutex, NULL);
+    pthread_cond_init(&re->__pop_condvar, NULL);
+    re->__pop_ptr = 0;
+    pthread_cond_init(&re->__push_condvar, NULL);
+    re->__push_ptr = 0;
+    re->__queue_len = 0;
+    int i = (int)((unsigned long)id % __MAP_LEN);
+    map_reagirs[i] = re;
+    return re;
+}
+
+void *create(void *(*state_machine)(void), ...)
 {
     va_list args;
-    va_start(args, r);
+    va_start(args, state_machine);
     struct ReagirOpt opt = va_arg(args, struct ReagirOpt);
     va_end(args);
 
     if (opt.on_state_change == NULL)
         opt.on_state_change = on_state_change;
 
+    struct Reagir *re = new_reagir(pthread_self());
+
     while (1)
     {
-        struct Reagir *re = r();
-        if (NULL == re)
-            break;
+        void *ret = state_machine();
+        if (ret)
+            return ret;
+        re->i = 0;
         struct __Entry e = receive_state(re);
-        void *new_state = re->__reducer(re->state, e.arg);
-        opt.on_state_change(&re->state, &new_state);
+        void *new_state = e.reaction->__reducer(e.reaction->state, e.arg);
+        opt.on_state_change(&e.reaction->state, &new_state);
     }
 }

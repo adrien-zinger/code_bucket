@@ -61,7 +61,6 @@ struct State
  */
 int before(struct State *self)
 {
-    printf("before\n");
     static const char *EXIT_KEYWORD = "exit"; // 1
     if (0 == memcmp(self->val, EXIT_KEYWORD, strlen(EXIT_KEYWORD)))
         return 1;
@@ -124,7 +123,7 @@ void first_print(struct State *self)
  */
 void *scan(void *_re)
 {
-    struct Reagir *re = (struct Reagir *)_re;
+    struct Reaction *re = (struct Reaction *)_re;
     struct State *new_state = malloc(sizeof(struct State));
     memcpy(new_state, re->state, sizeof(struct State));
     int _ = scanf("%299s", new_state->val);
@@ -135,7 +134,7 @@ void *scan(void *_re)
  * Lancement d'un nouveau thread dont la destinée est de lire une entrée
  * de moins de 300 caractères. Voir la fonction `scan`;
  */
-void async_scan(struct Reagir *re)
+void async_scan(struct Reaction *re)
 {
     pthread_t th;
     pthread_create(&th, NULL, scan, re);
@@ -176,21 +175,20 @@ void *make_init_state()
  * J'aurai pu utiliser "use_reducer", en fait ça ressemble beaucoup à un
  * pattern assez connue. Je pourrais créer un use_effect et tout le reste.
  */
-struct Reagir *state_machine()
+void *state_machine()
 {
-    struct Reagir *re = use_state(make_init_state);
+    struct Reaction *re = use_state(make_init_state);
     struct State *st = re->state;
     if (st->before(st) == 1)
     {
         void *_;
         pthread_join(st->scan, _);
         free(re->state);
-        free(re);
-        return NULL;
+        return EXIT_SM;
     }
     st->step(st);
     async_scan(re);
-    return re;
+    return NULL;
 }
 
 /**

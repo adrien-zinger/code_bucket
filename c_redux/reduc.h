@@ -4,15 +4,24 @@
 
 #pragma once
 
+#define __QUEUE_MAX_LEN 42
+#define __MAP_LEN 1024
+
+struct Reagir;
+struct Reaction
+{
+    int __id;
+    struct Reagir *__re;
+    void *state;
+    void *(*__reducer)(void *state, void *action);
+};
+
 // TODO: put private structures into a private header
 struct __Entry
 {
-    struct Reagir *re;
+    struct Reaction *reaction;
     void *arg;
 };
-
-#define __QUEUE_MAX_LEN 42
-#define __MAP_LEN 1024
 
 /**
  * Structure `Reagir`, contient mon état ainsi que tout le nécéssaire pour
@@ -28,8 +37,12 @@ struct __Entry
  */
 struct Reagir
 {
-    void *state;
-    void *(*__reducer)(void *state, void *action);
+    struct Reaction **content;
+    int len;
+    int capacity;
+    int i;
+
+    unsigned long id;
     pthread_cond_t __push_condvar;
     pthread_cond_t __pop_condvar;
     pthread_mutex_t __mutex;
@@ -39,13 +52,15 @@ struct Reagir
     struct __Entry __queue[__QUEUE_MAX_LEN];
 };
 
+#define EXIT_SM (void *)1
+
 /**
  * Trigger la machine à état en ajoutant à la file d'attente une mise
  * à jour à éffectuer. Si j'ai créé ma structure Reagir avec un réduceur,
  * l'argument `arg` est une action. Sinon, c'est le nouvel état que je
  * donne.
  */
-void dispatch(struct Reagir *reduc, void *arg);
+void dispatch(struct Reaction *re, void *arg);
 
 /**
  * Je créer une nouvelle structure Reagir.
@@ -53,10 +68,10 @@ void dispatch(struct Reagir *reduc, void *arg);
  * Return a Reduc object containing the latest state pointer
  * (the initial pointer if you choose the static method).
  */
-struct Reagir *
+struct Reaction *
 use_state(void *(*init)());
 
-struct Reagir *
+struct Reaction *
 use_reducer(void *(*reducer)(void *state, void *action), void *(*init)());
 
 struct ReagirOpt
@@ -68,4 +83,4 @@ struct ReagirOpt
  * Create a new runtime that call the handler each time
  * a dispatch is call.
  */
-void create(struct Reagir *(*r)(void), ...);
+void *create(void *(*state_machine)(void), ...);
