@@ -68,7 +68,7 @@ static struct Reaction *new_reaction(
 
 static struct Reaction *get_reaction(
     void *(*reducer)(void *state, void *action),
-    void *init)
+    void *(*init)())
 {
     unsigned long reid = pthread_self();
     int i = (int)((unsigned long)reid % __MAP_LEN);
@@ -86,7 +86,7 @@ static struct Reaction *get_reaction(
             sizeof(struct Reaction *) * re->capacity);
     }
 
-    struct Reaction *ret = re->content[re->i] = new_reaction(init, re, reducer);
+    struct Reaction *ret = re->content[re->i] = new_reaction(init(), re, reducer);
     re->len++;
     re->i++;
     return ret;
@@ -98,7 +98,7 @@ static struct Reaction *get_reaction(
 struct Reaction *
 use_reducer(void *(*reducer)(void *state, void *action), void *(*init)())
 {
-    return get_reaction(reducer, init());
+    return get_reaction(reducer, init);
 }
 
 /**
@@ -149,7 +149,16 @@ void *create(void *(*state_machine)(void), ...)
     {
         void *ret = state_machine();
         if (ret)
+        {
+            // Je nettoye les reaction mais je laisse
+            // l'utilisateur nettoyer s'il veut les
+            // états.
+            for (int i = 0; i < re->len; i++)
+                free(re->content[i]);
+            free(re->content);
+            free(re);
             return ret;
+        }
         re->i = 0;
         struct __Entry e = receive_state(re);
         void *new_state = e.reaction->__reducer(e.reaction->state, e.arg);
