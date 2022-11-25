@@ -7,7 +7,7 @@
 #include <pthread.h> /* pthread_* */
 #include <string.h>  /* memset, memcpy, memcmp */
 
-#include "reduc.h" /* State, Reduc, dispatch, create */
+#include "lib/reagir.h"
 
 /**
  * Etat de ma machine. Je concerve une chaine de caractères qui est celle que
@@ -142,11 +142,6 @@ void async_scan(struct Reaction *re)
 void *make_init_state()
 {
     static char val[300] = {'\0'};
-    // char *val;
-    // int count;
-    // int (*before)(struct State *self);
-    // void (*step)(struct State *self);
-    // pthread_t scan;
     static struct State st = {
         val,
         0,
@@ -161,7 +156,6 @@ int state_machine()
 {
     struct Reaction *re = use_state(make_init_state);
     struct State *st = re->state;
-    printf("state_machine\n");
     if (st->before(st) == 1)
     {
         void *_;

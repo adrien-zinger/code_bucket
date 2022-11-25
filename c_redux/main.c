@@ -8,7 +8,7 @@
 #include <stdlib.h>  /* malloc, free */
 #include <string.h>  /* memset, memcpy, memcmp */
 
-#include "reduc.h" /* State, Reduc, dispatch, create */
+#include "lib/reagir.h" /* dispatch, create, Reaction */
 
 /**
  * Etat de ma machine. Je concerve une chaine de caractères qui est celle que

@@ -1,8 +1,8 @@
-reduc: main.c reduc.c reduc.h
-	gcc -g main.c reduc.c -h reduc.h priv_reagir.h -o reduc
+reagir: main.c lib/reagir.c lib/reagir.h
+	gcc -g main.c lib/reagir.c -h lib/reagir.h -o reagir
 
-static_states: static_states.c reduc.c reduc.h
-	gcc -g static_states.c reduc.c -h reduc.h -o static_states
+static_states: static_states.c lib/reagir.c lib/reagir.h
+	gcc -g static_states.c lib/reagir.c -h lib/reagir.h -o static_states
 
-valgrind: reduc
-	valgrind --leak-check=full ./reduc
+valgrind: reagir
+	valgrind --leak-check=full ./reagir

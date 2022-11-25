@@ -3,7 +3,7 @@
 #include <stdarg.h>  /* va_list, ... */
 #include <assert.h>  /* assert */
 
-#include "./reduc.h"
+#include "./reagir.h"
 #include "./priv_reagir.h" /* Entry,
                               Reagir,
                               PrivReaction,

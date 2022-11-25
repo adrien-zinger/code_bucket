@@ -2,7 +2,7 @@
 #define HEADER_PRIV_REAGIR
 
 #include <pthread.h>
-#include "reduc.h"
+#include "./reagir.h"
 
 #define QUEUE_MAX_LEN 42
 #define MAP_LEN 1024
