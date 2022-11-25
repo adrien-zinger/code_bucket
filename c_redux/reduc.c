@@ -4,15 +4,14 @@
 #include <assert.h>  /* assert */
 
 #include "./reduc.h"
-
-#include <stdio.h>
+#include "./priv_reagir.h" /* */
 
 // FIXME: faire une vrai hashmap
 static struct Reagir *map_reagirs[__MAP_LEN] = {NULL};
 
 static void send_state(struct __Entry e)
 {
-    struct Reagir *re = e.reaction->__re;
+    struct Reagir *re = e.rea->__re;
     pthread_mutex_lock(&re->__mutex);
     while (re->__queue_len == __QUEUE_MAX_LEN)
         pthread_cond_wait(&re->__pop_condvar, &re->__mutex);
@@ -38,7 +37,7 @@ static struct __Entry receive_state(struct Reagir *re)
 
 void dispatch(struct Reaction *rea, void *arg)
 {
-    struct __Entry e = {rea, arg};
+    struct __Entry e = {(struct PrivReaction *)rea, arg};
     send_state(e);
 }
 
@@ -53,14 +52,13 @@ use_state(void *(*init)())
     return use_reducer(use_state_reducer, init);
 }
 
-static struct Reaction *new_reaction(
+struct PrivReaction *new_reaction(
     void *init,
     struct Reagir *re,
     void *(*reducer)(void *, void *))
 {
-    struct Reaction *ret = malloc(sizeof(struct Reaction));
-    ret->state = init;
-    ret->__id = re->i;
+    struct PrivReaction *ret = malloc(sizeof(struct PrivReaction));
+    ret->pub.state = init;
     ret->__re = re;
     ret->__reducer = reducer;
     return ret;
@@ -76,20 +74,21 @@ static struct Reaction *get_reaction(
 
     struct Reagir *re = map_reagirs[i];
     if (re->len > re->i)
-        return re->content[re->i++];
+        return &re->content[re->i++]->pub;
 
     if (re->capacity == re->len)
     {
         re->capacity *= 2;
         re->content = realloc(
             re->content,
-            sizeof(struct Reaction *) * re->capacity);
+            sizeof(struct PrivReaction *) * re->capacity);
     }
 
-    struct Reaction *ret = re->content[re->i] = new_reaction(init(), re, reducer);
+    struct PrivReaction *rea = new_reaction(init(), re, reducer);
+    re->content[re->i] = rea;
     re->len++;
     re->i++;
-    return ret;
+    return &rea->pub;
 }
 
 /**
@@ -111,7 +110,6 @@ use_reducer(void *(*reducer)(void *state, void *action), void *(*init)())
  */
 static void on_state_change(void **dst, void **src)
 {
-    printf("on state new\n");
     *dst = *src;
 }
 
@@ -120,7 +118,7 @@ struct Reagir *new_reagir(unsigned long id)
     struct Reagir *re = malloc(sizeof(struct Reagir));
     re->capacity = 4;
     re->len = 0;
-    re->content = malloc(re->capacity * sizeof(struct Reaction *));
+    re->content = malloc(re->capacity * sizeof(struct PrivReaction *));
     re->id = id;
     re->i = 0;
     pthread_mutex_init(&re->__mutex, NULL);
@@ -134,11 +132,17 @@ struct Reagir *new_reagir(unsigned long id)
     return re;
 }
 
-void create(int (*state_machine)(void), struct ReagirOpt *_opt)
+void create(int (*state_machine)(void), struct Opt *_opt)
 {
-    struct ReagirOpt opt;
+    struct Opt opt;
     if (_opt == NULL || _opt->on_state_change == NULL)
+    {
         opt.on_state_change = on_state_change;
+    }
+    else
+    {
+        opt.on_state_change = _opt->on_state_change;
+    }
 
     struct Reagir *re = new_reagir(pthread_self());
 
@@ -146,8 +150,8 @@ void create(int (*state_machine)(void), struct ReagirOpt *_opt)
     {
         re->i = 0;
         struct __Entry e = receive_state(re);
-        void *new_state = e.reaction->__reducer(e.reaction->state, e.arg);
-        opt.on_state_change(&e.reaction->state, &new_state);
+        void *new_state = e.rea->__reducer(e.rea->pub.state, e.arg);
+        opt.on_state_change(&e.rea->pub.state, &new_state);
     }
     for (int i = 0; i < re->len; i++)
         free(re->content[i]);

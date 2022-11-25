@@ -125,6 +125,7 @@ void *scan(void *_re)
 {
     struct Reaction *re = (struct Reaction *)_re;
     struct State *new_state = malloc(sizeof(struct State));
+    printf("alloc %p\n", new_state);
     memcpy(new_state, re->state, sizeof(struct State));
     int _ = scanf("%299s", new_state->val);
     dispatch(re, new_state);
@@ -149,6 +150,7 @@ void *make_init_state()
 {
     static char val[300] = {'\0'};
     struct State *st = malloc(sizeof(struct State));
+    printf("alloc %p\n", st);
     st->val = val;
     st->count = 0;
     st->scan = 0;
@@ -198,6 +200,7 @@ int state_machine()
  */
 void on_change_with_free(void **dst, void **src)
 {
+    printf("free %p\n", *dst);
     free(*dst);
     *dst = *src;
 }
@@ -207,6 +210,6 @@ void on_change_with_free(void **dst, void **src)
  */
 void main(void)
 {
-    struct ReagirOpt opt = {on_change_with_free};
+    struct Opt opt = {on_change_with_free};
     create(state_machine, &opt);
 }
