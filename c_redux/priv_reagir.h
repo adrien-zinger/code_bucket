@@ -4,14 +4,14 @@
 #include <pthread.h>
 #include "reduc.h"
 
-#define __QUEUE_MAX_LEN 42
-#define __MAP_LEN 1024
+#define QUEUE_MAX_LEN 42
+#define MAP_LEN 1024
 
-struct __Entry;
+struct Entry;
 struct Reaction;
 struct PrivReaction;
 
-struct __Entry
+struct Entry
 {
     struct PrivReaction *rea;
     void *arg;
@@ -25,20 +25,20 @@ struct Reagir
     int i;
 
     unsigned long id;
-    pthread_cond_t __push_condvar;
-    pthread_cond_t __pop_condvar;
-    pthread_mutex_t __mutex;
-    char __queue_len;
-    char __push_ptr;
-    char __pop_ptr;
-    struct __Entry __queue[__QUEUE_MAX_LEN];
+    pthread_cond_t push_condvar;
+    pthread_cond_t pop_condvar;
+    pthread_mutex_t mutex;
+    char queue_len;
+    char push_ptr;
+    char pop_ptr;
+    struct Entry queue[QUEUE_MAX_LEN];
 };
 
 struct PrivReaction
 {
     struct Reaction pub;
-    struct Reagir *__re;
-    void *(*__reducer)(void *state, void *action);
+    struct Reagir *re;
+    void *(*reducer)(void *state, void *action);
 };
 
 #endif
