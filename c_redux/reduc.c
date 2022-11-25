@@ -111,6 +111,7 @@ use_reducer(void *(*reducer)(void *state, void *action), void *(*init)())
  */
 static void on_state_change(void **dst, void **src)
 {
+    printf("on state new\n");
     *dst = *src;
 }
 
@@ -133,14 +134,10 @@ struct Reagir *new_reagir(unsigned long id)
     return re;
 }
 
-void create(int (*state_machine)(void), ...)
+void create(int (*state_machine)(void), struct ReagirOpt *_opt)
 {
-    va_list args;
-    va_start(args, state_machine);
-    struct ReagirOpt opt = va_arg(args, struct ReagirOpt);
-    va_end(args);
-
-    if (opt.on_state_change == NULL)
+    struct ReagirOpt opt;
+    if (_opt == NULL || _opt->on_state_change == NULL)
         opt.on_state_change = on_state_change;
 
     struct Reagir *re = new_reagir(pthread_self());

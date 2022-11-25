@@ -84,4 +84,4 @@ struct ReagirOpt
  * Create a new runtime that call the handler each time
  * a dispatch is call.
  */
-void create(int (*state_machine)(void), ...);
+void create(int (*state_machine)(void), struct ReagirOpt *opt);

@@ -5,7 +5,6 @@
 
 #include <stdio.h>   /* printf, scanf */
 #include <pthread.h> /* pthread_* */
-#include <stdlib.h>  /* malloc, free */
 #include <string.h>  /* memset, memcpy, memcmp */
 
 #include "reduc.h" /* State, Reduc, dispatch, create */
@@ -121,13 +120,12 @@ void first_print(struct State *self)
  * Met à jour directement mon état et lance un dispatch qui mettra à jour ma
  * machine à état.
  */
-void *scan(void *_re)
+void *scan(void *_rea)
 {
-    struct Reaction *re = (struct Reaction *)_re;
-    struct State *new_state = malloc(sizeof(struct State));
-    memcpy(new_state, re->state, sizeof(struct State));
-    int _ = scanf("%299s", new_state->val);
-    dispatch(re, new_state);
+    struct Reaction *rea = (struct Reaction *)_rea;
+    struct State *st = (struct State *)rea->state;
+    int _ = scanf("%299s", st->val);
+    dispatch(rea, st);
 }
 
 /**
@@ -141,49 +139,33 @@ void async_scan(struct Reaction *re)
     ((struct State *)re->state)->scan = th;
 }
 
-/**
- * Je creer ma fonction d'initialization.
- * J'alloue sur ma pile un état.
- */
 void *make_init_state()
 {
     static char val[300] = {'\0'};
-    struct State *st = malloc(sizeof(struct State));
-    st->val = val;
-    st->count = 0;
-    st->scan = 0;
-    st->step = first_print;
-    st->before = zero;
-    return st;
+    // char *val;
+    // int count;
+    // int (*before)(struct State *self);
+    // void (*step)(struct State *self);
+    // pthread_t scan;
+    static struct State st = {
+        val,
+        0,
+        zero,
+        first_print,
+        0,
+    };
+    return &st;
 }
 
-/**
- * Description de la machine à état. Cette fonction est appelée au démarrage
- * de la machine, on initialise un état statique qui nous donnera
- * l'information sur comment se comporter.
- *
- * On peut aussi utiliser un état sur la pile, et éventuellement changer
- * d'état. Quoi qu'il en soit, l'état courant ici est statique et donc je peut
- * utiliser la variable locale. Mais je pourrais aussi utiliser le pointeur
- * vers l'état courrant dans la structure `re->state`.
- *
- * La fonction "use_state" fait de la mémoïsation en fonction de l'adresse de
- * l'état initial. A bien prendre garde si je décide de bouger ou de changer
- * completement d'état. L'object `re` sera différent. Ca peut surement avoir un
- * interêt, à creuser.
- *
- * J'aurai pu utiliser "use_reducer", en fait ça ressemble beaucoup à un
- * pattern assez connue. Je pourrais créer un use_effect et tout le reste.
- */
 int state_machine()
 {
     struct Reaction *re = use_state(make_init_state);
     struct State *st = re->state;
+    printf("state_machine\n");
     if (st->before(st) == 1)
     {
         void *_;
         pthread_join(st->scan, _);
-        free(re->state);
         return EXIT_SM;
     }
     st->step(st);
@@ -191,22 +173,7 @@ int state_machine()
     return CONTINUE_SM;
 }
 
-/**
- * Un bon échange de pointeur avec un free drastique. Cette
- * partie serait critique si on était dans un context avec de
- * multiple producteurs d'évennement.
- */
-void on_change_with_free(void **dst, void **src)
-{
-    free(*dst);
-    *dst = *src;
-}
-
-/**
- * Main, je lance ma machine à état.
- */
 void main(void)
 {
-    struct ReagirOpt opt = {on_change_with_free};
-    create(state_machine, &opt);
+    create(state_machine, NULL);
 }
