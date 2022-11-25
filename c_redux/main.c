@@ -175,7 +175,7 @@ void *make_init_state()
  * J'aurai pu utiliser "use_reducer", en fait ça ressemble beaucoup à un
  * pattern assez connue. Je pourrais créer un use_effect et tout le reste.
  */
-void *state_machine()
+int state_machine()
 {
     struct Reaction *re = use_state(make_init_state);
     struct State *st = re->state;
@@ -188,7 +188,7 @@ void *state_machine()
     }
     st->step(st);
     async_scan(re);
-    return NULL;
+    return CONTINUE_SM;
 }
 
 /**

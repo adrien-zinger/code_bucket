@@ -52,7 +52,8 @@ struct Reagir
     struct __Entry __queue[__QUEUE_MAX_LEN];
 };
 
-#define EXIT_SM (void *)1
+#define EXIT_SM 0
+#define CONTINUE_SM 1
 
 /**
  * Trigger la machine à état en ajoutant à la file d'attente une mise
@@ -83,4 +84,4 @@ struct ReagirOpt
  * Create a new runtime that call the handler each time
  * a dispatch is call.
  */
-void *create(void *(*state_machine)(void), ...);
+void create(int (*state_machine)(void), ...);

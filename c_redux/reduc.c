@@ -133,7 +133,7 @@ struct Reagir *new_reagir(unsigned long id)
     return re;
 }
 
-void *create(void *(*state_machine)(void), ...)
+void create(int (*state_machine)(void), ...)
 {
     va_list args;
     va_start(args, state_machine);
@@ -145,23 +145,15 @@ void *create(void *(*state_machine)(void), ...)
 
     struct Reagir *re = new_reagir(pthread_self());
 
-    while (1)
+    while (state_machine())
     {
-        void *ret = state_machine();
-        if (ret)
-        {
-            // Je nettoye les reaction mais je laisse
-            // l'utilisateur nettoyer s'il veut les
-            // états.
-            for (int i = 0; i < re->len; i++)
-                free(re->content[i]);
-            free(re->content);
-            free(re);
-            return ret;
-        }
         re->i = 0;
         struct __Entry e = receive_state(re);
         void *new_state = e.reaction->__reducer(e.reaction->state, e.arg);
         opt.on_state_change(&e.reaction->state, &new_state);
     }
+    for (int i = 0; i < re->len; i++)
+        free(re->content[i]);
+    free(re->content);
+    free(re);
 }
