@@ -53,7 +53,7 @@ fn bar() -> MyResult<String, &'static str> {
 //   x? // first Err return bxy a Result OR first None return NoneErr OR T
 // }
 
-fn foo() -> MyResult<dyn ToString, &'static str> {
+fn foo() -> MyResult<String, &'static str> {
     let _ = bar()?;
     MyResult::Some(String::from("hello world"))
 }
