@@ -1,28 +1,33 @@
-use std::sync::{
-    atomic::{AtomicPtr, AtomicU32, Ordering},
-    Arc,
+#![crate_type = "staticlib"]
+
+#[cfg(test)]
+use std::sync::Arc;
+use std::{
+    ffi::c_void,
+    sync::atomic::{AtomicPtr, AtomicU32, Ordering},
 };
 
-struct NonBlockingQueue {
-    head: AtomicPtr<Ptr>,
-    tail: AtomicPtr<Ptr>,
+#[repr(C)]
+pub struct NonBlockingQueue<T> {
+    head: AtomicPtr<Ptr<T>>,
+    tail: AtomicPtr<Ptr<T>>,
 }
 
-struct Ptr {
-    value: *const u32,
+struct Ptr<T> {
+    value: *mut T,
     count: AtomicU32,
-    next: AtomicPtr<Ptr>,
+    next: AtomicPtr<Ptr<T>>,
 }
 
-impl NonBlockingQueue {
-    fn new() -> Self {
+impl<T> NonBlockingQueue<T> {
+    pub fn new() -> Self {
         let ptr = Box::new(Ptr {
-            value: core::ptr::null(),
+            value: core::ptr::null_mut(),
             count: AtomicU32::default(),
             next: AtomicPtr::default(),
         });
 
-        let ptr: *mut Ptr = Box::leak(ptr);
+        let ptr: *mut Ptr<T> = Box::into_raw(ptr);
 
         Self {
             head: AtomicPtr::new(ptr),
@@ -30,7 +35,7 @@ impl NonBlockingQueue {
         }
     }
 
-    fn enqueue(&self, value: *const u32) {
+    pub fn enqueue(&self, value: *mut T) {
         let ptr = Box::new(Ptr {
             value,
             count: AtomicU32::default(),
@@ -75,7 +80,7 @@ impl NonBlockingQueue {
         }
     }
 
-    fn dequeue(&self) -> Option<*const u32> {
+    pub fn dequeue(&self) -> Option<*mut T> {
         loop {
             let head = self.head.load(Ordering::Acquire);
             let tail = self.tail.load(Ordering::Acquire);
@@ -104,8 +109,8 @@ impl NonBlockingQueue {
                         .compare_exchange(head, next, Ordering::Acquire, Ordering::Acquire)
                         .is_ok()
                     {
-                        // Le fait qu'on puisse déréférencer sans crainte dans cet algorithme
-                        // réside dans le fait qu'on attende que cette echange soit fait. Après
+                        // Le miracle qu'on puisse déréférencer sans crainte dans cet algorithme
+                        // réside du fait qu'on attende que cette echange soit fait. Après
                         // l'échange de head et next, la head précédente est inaxéssible à tout
                         // autre threads. Donc on ne se trouvera jamais avec un pointeur null à
                         // déréférencer.
@@ -116,30 +121,54 @@ impl NonBlockingQueue {
             }
         }
     }
+}
 
-    fn print(&self) {
-        let mut curr = self.head.load(Ordering::Acquire);
-        let mut next = unsafe { (*curr).next.load(Ordering::Acquire) };
-        while !next.is_null() {
-            println!("val {}", unsafe { *(*next).value });
-            curr = unsafe { (*curr).next.load(Ordering::Acquire) };
-            next = unsafe { (*curr).next.load(Ordering::Acquire) };
-        }
+impl<T> Drop for NonBlockingQueue<T> {
+    fn drop(&mut self) {
+        while self.dequeue().is_some() {}
+
+        let head = self.head.load(Ordering::Acquire);
+        unsafe { core::mem::drop(Box::from_raw(head)) };
     }
 }
 
+impl<T> Default for NonBlockingQueue<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn new_queue() -> NonBlockingQueue<c_void> {
+    NonBlockingQueue::new()
+}
+
+#[no_mangle]
+pub extern "C" fn push(queue: &NonBlockingQueue<c_void>, value: *mut c_void) {
+    queue.enqueue(value);
+}
+
+#[no_mangle]
+pub extern "C" fn pop(queue: &NonBlockingQueue<c_void>) -> *mut c_void {
+    match queue.dequeue() {
+        Some(value) => value,
+        _ => core::ptr::null_mut(),
+    }
+}
+
+#[cfg(test)]
 fn single_thread() {
     let q = NonBlockingQueue::new();
-    let v = 5;
-    q.enqueue(&v);
+    let mut v = 5;
+    q.enqueue(&mut v);
     println!("done");
-    q.enqueue(&v);
-    q.print();
+    q.enqueue(&mut v);
     let v2 = q.dequeue().expect("some");
     println!("{}", unsafe { *v2 });
     q.dequeue().expect("some");
 }
 
+#[cfg(test)]
 fn _multi_threads() {
     let q1 = Arc::new(NonBlockingQueue::new());
     let q2 = q1.clone();
@@ -163,7 +192,8 @@ fn _multi_threads() {
     th.join().expect("expected a end");
 }
 
-fn main() {
+#[test]
+fn test_lib() {
     single_thread();
-    _multi_threads();
+    //multi_threads();
 }
