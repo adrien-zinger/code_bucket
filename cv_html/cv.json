@@ -1,0 +1,32 @@
+{
+    "Informations personnelles": {
+        "Nom": "John Doe",
+        "Adresse": "123 Main Street",
+        "Email": "john.doe@example.com",
+        "Téléphone": "123-456-7890"
+    },
+    "Expérience professionnelle": {
+        "Entreprise 1": {
+            "Titre": "Développeur logiciel",
+            "Dates": "Janvier 2019 - Présent",
+            "Description": "Développement d'applications web et mobiles"
+        },
+        "Entreprise 2": {
+            "Titre": "Ingénieur logiciel",
+            "Dates": "Juillet 2016 - Décembre 2018",
+            "Description": "Développement d'outils de gestion pour les équipes de développement"
+        }
+    },
+    "Formation": {
+        "Diplôme 1": {
+            "Intitulé": "Bachelor en informatique",
+            "Ecole": "Université de Example",
+            "Dates": "Septembre 2012 - Juin 2016"
+        },
+        "Diplôme 2": {
+            "Intitulé": "Certification en développement web",
+            "Ecole": "Institut de formation en informatique",
+            "Dates": "Mai 2014 - Août 2014"
+        }
+    }
+}
