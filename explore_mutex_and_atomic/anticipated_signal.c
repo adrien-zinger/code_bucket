@@ -1,10 +1,3 @@
-/**
- * Ce morceau de code, comme celui de anticipated_signal.c, peut mener à un
- * dead lock. Car un thread qui attend une variable conditionnelle n'est pas
- * rétroactif. En d'autre termes, il ne peut pas lire un signal effectué
- * avant l'opération d'attente.
- */
-
 #include <pthread.h>
 #include <stdio.h>
 
@@ -13,25 +6,30 @@ pthread_mutex_t MUTEX = PTHREAD_MUTEX_INITIALIZER;
 
 void *producer_thread(void *_)
 {
+    // Risque de signal perdu
     pthread_cond_signal(&CONDVAR);
+    printf("EOP\n");
 }
 
 void *consumer_thread(void *_)
 {
     pthread_cond_wait(&CONDVAR, &MUTEX);
+    printf("EOC\n");
 }
 
 void main()
 {
     pthread_t producer;
     pthread_t consumer;
-    pthread_create(&consumer,
-                   NULL,
-                   consumer_thread,
-                   NULL);
+
     pthread_create(&producer,
                    NULL,
                    producer_thread,
+                   NULL);
+
+    pthread_create(&consumer,
+                   NULL,
+                   consumer_thread,
                    NULL);
     void **_res = NULL;
     pthread_join(producer, _res);
