@@ -47,7 +47,12 @@ impl<T> NonBlockingQueue<T> {
         loop {
             let tail = self.tail.load(Ordering::Acquire);
             let next = unsafe { (*tail).next.load(Ordering::Acquire) };
-            if tail == self.tail.load(Ordering::Acquire) {
+            if unsafe {
+                (*tail).count.load(Ordering::Acquire)
+                    == (*self.tail.load(Ordering::Acquire))
+                        .count
+                        .load(Ordering::Acquire)
+            } {
                 if next.is_null() {
                     unsafe {
                         (*ptr)
@@ -85,7 +90,12 @@ impl<T> NonBlockingQueue<T> {
             let head = self.head.load(Ordering::Acquire);
             let tail = self.tail.load(Ordering::Acquire);
             let next = unsafe { (*head).next.load(Ordering::Acquire) };
-            if head == self.head.load(Ordering::Acquire) {
+            if unsafe {
+                (*head).count.load(Ordering::Acquire)
+                    == (*self.head.load(Ordering::Acquire))
+                        .count
+                        .load(Ordering::Acquire)
+            } {
                 if std::ptr::eq(head, tail) {
                     if next.is_null() {
                         return None;
@@ -190,6 +200,45 @@ fn _multi_threads() {
     }
 
     th.join().expect("expected a end");
+}
+
+#[cfg(test)]
+#[test]
+fn multi_multi_threads() {
+    let q1 = Arc::new(NonBlockingQueue::new());
+    let q2 = q1.clone();
+    let q3 = q1.clone();
+    let v: *mut u32 = &mut 5;
+    let value = AtomicPtr::new(v);
+    let value2 = AtomicPtr::new(v);
+
+    let th = std::thread::spawn(move || {
+        for _ in 0..100 {
+            let v = value.load(Ordering::Acquire);
+            q2.enqueue(v);
+        }
+    });
+
+    let th2 = std::thread::spawn(move || {
+        for _ in 0..100 {
+            let v = value2.load(Ordering::Acquire);
+            q3.enqueue(v);
+        }
+    });
+
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    let mut counter = 0;
+    for _ in 0..300 {
+        if q1.dequeue().is_some() {
+            println!("dequeued {}", counter);
+            counter += 1;
+        }
+    }
+
+    println!("ho");
+
+    th.join().expect("expected a end");
+    th2.join().expect("expected a end");
 }
 
 #[test]
