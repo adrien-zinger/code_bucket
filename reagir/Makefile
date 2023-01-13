@@ -1,8 +1,13 @@
-reagir: main.c lib/reagir.c lib/reagir.h
-	gcc -g main.c lib/reagir.c -h lib/reagir.h -o reagir
+all: main.out static_states.out fsm.out
 
-static_states: static_states.c lib/reagir.c lib/reagir.h
-	gcc -g static_states.c lib/reagir.c -h lib/reagir.h -o static_states
+main.out: main.c lib/reagir.c lib/reagir.h
+	gcc -g main.c lib/reagir.c -h lib/reagir.h -o main.out
 
-valgrind: reagir
-	valgrind --leak-check=full ./reagir
+static_states.out: static_states.c lib/reagir.c lib/reagir.h
+	gcc -g static_states.c lib/reagir.c -h lib/reagir.h -o static_states.out
+
+fsm.out: fsm.c lib/reagir.c lib/reagir.h
+	gcc -g fsm.c lib/reagir.c -h lib/reagir.h -o fsm.out
+
+valgrind: main.out
+	valgrind --leak-check=full ./main.out

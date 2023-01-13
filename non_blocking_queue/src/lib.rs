@@ -45,41 +45,38 @@ impl<T> NonBlockingQueue<T> {
         let ptr = Box::into_raw(ptr);
 
         loop {
-            let tail = self.tail.load(Ordering::Acquire);
-            let next = unsafe { (*tail).next.load(Ordering::Acquire) };
+            let tail = self.tail.load(Ordering::SeqCst);
+            let next = unsafe { (*tail).next.load(Ordering::SeqCst) };
             if unsafe {
-                (*tail).count.load(Ordering::Acquire)
-                    == (*self.tail.load(Ordering::Acquire))
+                (*tail).count.load(Ordering::SeqCst)
+                    == (*self.tail.load(Ordering::SeqCst))
                         .count
-                        .load(Ordering::Acquire)
+                        .load(Ordering::SeqCst)
             } {
                 if next.is_null() {
                     unsafe {
                         (*ptr)
                             .count
-                            .store((*tail).count.load(Ordering::Acquire) + 1, Ordering::Release);
+                            .store((*tail).count.load(Ordering::SeqCst) + 1, Ordering::SeqCst);
                         if (*tail)
                             .next
-                            .compare_exchange(next, ptr, Ordering::Acquire, Ordering::Acquire)
+                            .compare_exchange(next, ptr, Ordering::SeqCst, Ordering::SeqCst)
                             .is_ok()
                         {
                             let _ = self.tail.compare_exchange(
                                 tail,
                                 ptr,
-                                Ordering::Acquire,
-                                Ordering::Acquire,
+                                Ordering::SeqCst,
+                                Ordering::SeqCst,
                             );
 
                             return;
                         }
                     }
                 } else {
-                    let _ = self.tail.compare_exchange(
-                        tail,
-                        next,
-                        Ordering::Acquire,
-                        Ordering::Acquire,
-                    );
+                    let _ =
+                        self.tail
+                            .compare_exchange(tail, next, Ordering::SeqCst, Ordering::SeqCst);
                 }
             }
         }
@@ -87,36 +84,33 @@ impl<T> NonBlockingQueue<T> {
 
     pub fn dequeue(&self) -> Option<*mut T> {
         loop {
-            let head = self.head.load(Ordering::Acquire);
-            let tail = self.tail.load(Ordering::Acquire);
-            let next = unsafe { (*head).next.load(Ordering::Acquire) };
+            let head = self.head.load(Ordering::SeqCst);
+            let tail = self.tail.load(Ordering::SeqCst);
+            let next = unsafe { (*head).next.load(Ordering::SeqCst) };
             if unsafe {
-                (*head).count.load(Ordering::Acquire)
-                    == (*self.head.load(Ordering::Acquire))
+                (*head).count.load(Ordering::SeqCst)
+                    == (*self.head.load(Ordering::SeqCst))
                         .count
-                        .load(Ordering::Acquire)
+                        .load(Ordering::SeqCst)
             } {
                 if std::ptr::eq(head, tail) {
                     if next.is_null() {
                         return None;
                     }
-                    unsafe { (*next).count.fetch_add(1, Ordering::Acquire) };
-                    let _ = self.tail.compare_exchange(
-                        tail,
-                        next,
-                        Ordering::Acquire,
-                        Ordering::Acquire,
-                    );
+                    unsafe { (*next).count.fetch_add(1, Ordering::SeqCst) };
+                    let _ =
+                        self.tail
+                            .compare_exchange(tail, next, Ordering::SeqCst, Ordering::SeqCst);
                 } else {
                     let ret = unsafe { (*next).value };
                     unsafe {
                         (*next)
                             .count
-                            .store((*head).count.load(Ordering::Acquire) + 1, Ordering::Release);
+                            .store((*head).count.load(Ordering::SeqCst) + 1, Ordering::SeqCst);
                     };
                     if self
                         .head
-                        .compare_exchange(head, next, Ordering::Acquire, Ordering::Acquire)
+                        .compare_exchange(head, next, Ordering::SeqCst, Ordering::SeqCst)
                         .is_ok()
                     {
                         // Le miracle qu'on puisse déréférencer sans crainte dans cet algorithme
@@ -137,7 +131,7 @@ impl<T> Drop for NonBlockingQueue<T> {
     fn drop(&mut self) {
         while self.dequeue().is_some() {}
 
-        let head = self.head.load(Ordering::Acquire);
+        let head = self.head.load(Ordering::SeqCst);
         unsafe { core::mem::drop(Box::from_raw(head)) };
     }
 }
@@ -166,6 +160,12 @@ pub extern "C" fn pop(queue: &NonBlockingQueue<c_void>) -> *mut c_void {
     }
 }
 
+#[no_mangle]
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn new_free(queue: *mut NonBlockingQueue<c_void>) {
+    std::mem::drop(Box::from_raw(queue));
+}
+
 #[cfg(test)]
 fn single_thread() {
     let q = NonBlockingQueue::new();
@@ -186,7 +186,7 @@ fn _multi_threads() {
     let value = AtomicPtr::new(v);
     let th = std::thread::spawn(move || {
         for _ in 0..100 {
-            let v = value.load(Ordering::Acquire);
+            let v = value.load(Ordering::SeqCst);
             q2.enqueue(v);
         }
     });
@@ -214,14 +214,14 @@ fn multi_multi_threads() {
 
     let th = std::thread::spawn(move || {
         for _ in 0..100 {
-            let v = value.load(Ordering::Acquire);
+            let v = value.load(Ordering::SeqCst);
             q2.enqueue(v);
         }
     });
 
     let th2 = std::thread::spawn(move || {
         for _ in 0..100 {
-            let v = value2.load(Ordering::Acquire);
+            let v = value2.load(Ordering::SeqCst);
             q3.enqueue(v);
         }
     });

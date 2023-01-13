@@ -6,8 +6,7 @@ int main()
     {
         int a = 2;
         int b = 0;
-        int result = (a == (b = 2));
-        assert(result == 1);
+        assert(a == (b = 2));
     }
     return 0;
 }
