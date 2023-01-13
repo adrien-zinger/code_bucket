@@ -1,2 +1,5 @@
 target
-lib.o
+*.o
+*.a
+*.h
+*.out

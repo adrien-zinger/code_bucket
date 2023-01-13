@@ -7,7 +7,6 @@ use std::{
     sync::atomic::{AtomicPtr, AtomicU32, Ordering},
 };
 
-#[repr(C)]
 pub struct NonBlockingQueue<T> {
     head: AtomicPtr<Ptr<T>>,
     tail: AtomicPtr<Ptr<T>>,
@@ -143,18 +142,22 @@ impl<T> Default for NonBlockingQueue<T> {
 }
 
 #[no_mangle]
-pub extern "C" fn new_queue() -> NonBlockingQueue<c_void> {
-    NonBlockingQueue::new()
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn new_queue() -> *mut c_void {
+    let queue = Box::new(NonBlockingQueue::<c_void>::new());
+    Box::into_raw(queue) as *mut c_void
 }
 
 #[no_mangle]
-pub extern "C" fn push(queue: &NonBlockingQueue<c_void>, value: *mut c_void) {
-    queue.enqueue(value);
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn push(queue: *mut c_void, value: *mut c_void) {
+    (*(queue as *mut NonBlockingQueue<c_void>)).enqueue(value);
 }
 
 #[no_mangle]
-pub extern "C" fn pop(queue: &NonBlockingQueue<c_void>) -> *mut c_void {
-    match queue.dequeue() {
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn pop(queue: *mut c_void) -> *mut c_void {
+    match (*(queue as *mut NonBlockingQueue<c_void>)).dequeue() {
         Some(value) => value,
         _ => core::ptr::null_mut(),
     }
@@ -162,8 +165,8 @@ pub extern "C" fn pop(queue: &NonBlockingQueue<c_void>) -> *mut c_void {
 
 #[no_mangle]
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn new_free(queue: *mut NonBlockingQueue<c_void>) {
-    std::mem::drop(Box::from_raw(queue));
+pub unsafe extern "C" fn free_queue(queue: *mut c_void) {
+    std::mem::drop(Box::from_raw(queue as *mut NonBlockingQueue<c_void>));
 }
 
 #[cfg(test)]
