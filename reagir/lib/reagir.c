@@ -157,6 +157,7 @@ void create(int (*state_machine)(void), struct Opt *_opt)
         void *new_state = e.rea->reducer(e.rea->pub.state, e.arg);
         opt.on_state_change(&e.rea->pub.state, &new_state);
     }
+
     for (int i = 0; i < re->len; i++)
         free(re->content[i]);
     free(re->content);
