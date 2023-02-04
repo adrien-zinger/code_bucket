@@ -14,7 +14,7 @@ une file d'évènement (voir l'article sur les machines à états)
 Le but est de trouver une représentation de la machine à état
 avec des appels statics et non dynamiques. (call fn vs call *fn)
 
-On a besoin d'une file avec des structures auser defined, d'où une
+On a besoin d'une file avec des structures user defined, d'où une
 fonction call templated.
 
 Question qu'on est en droit de se poser: l'utilisation de variant
