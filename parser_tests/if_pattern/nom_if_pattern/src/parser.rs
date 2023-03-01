@@ -7,15 +7,30 @@
 //! unmatched : IF EXPR THEN matched
 //!           | IF EXPR THEN matched ELSE unmatched ;
 
+//! Petites modifications pour que la grammaire soit facile
+//! a coder avec un parser combinator:
+//!
+//! stmt : bounded_matched | bounded_unmatched ;
+//! bounded_matched : matched EOF ;
+//! bounded_unmatched : unmatched EOF ;
+//! matched : token_if EXPR token_then matched token_else matched
+//!         | STMT ;
+//! unmatched : token_if EXPR token_then matched
+//!           | token_if EXPR token_then matched token_else unmatched ;
+//! token_if : IF spaces ;
+//! token_then : spaces THEN spaces ;
+//! token_else : spaces THEN spaces ;
+//! spaces : at_least_one(SPACE) ;
+
 use nom::{
     self,
     branch::alt,
     bytes::complete::tag,
-    character::complete::{alphanumeric1, multispace0},
+    character::complete::{alphanumeric1, multispace1},
     combinator::{eof, recognize},
     error::VerboseError,
     multi::many0_count,
-    sequence::{delimited, pair, Tuple},
+    sequence::{delimited, pair, terminated, Tuple},
     IResult,
 };
 
@@ -23,7 +38,7 @@ pub type Res<T, U> = IResult<T, U, VerboseError<T>>;
 
 pub fn stmt(input: &str) -> Res<&str, &str> {
     // Peu importe l'ordre ici
-    alt((bounded_stmt_unmatched, bounded_stmt_matched))(input)
+    alt((bounded_stmt_matched, bounded_stmt_unmatched))(input)
 }
 
 pub fn bounded_stmt_unmatched(input: &str) -> Res<&str, &str> {
@@ -101,35 +116,27 @@ fn ext_unmatched_recursion(input: &str) -> Res<&str, &str> {
 }
 
 fn token_then(input: &str) -> Res<&str, &str> {
-    delimited(multispace0, tag("then"), multispace0)(input)
+    delimited(multispace1, tag("then"), multispace1)(input)
 }
 
 fn token_else(input: &str) -> Res<&str, &str> {
-    delimited(multispace0, tag("else"), multispace0)(input)
+    delimited(multispace1, tag("else"), multispace1)(input)
 }
 
 fn token_if(input: &str) -> Res<&str, &str> {
-    delimited(multispace0, tag("if"), multispace0)(input)
+    terminated(tag("if"), multispace1)(input)
 }
 
 fn expr(input: &str) -> Res<&str, &str> {
-    delimited(
-        multispace0,
-        recognize(pair(
-            tag("expr"),
-            many0_count(alt((alphanumeric1, tag("_")))),
-        )),
-        multispace0,
-    )(input)
+    recognize(pair(
+        tag("expr"),
+        many0_count(alt((alphanumeric1, tag("_")))),
+    ))(input)
 }
 
 fn stmt_final(input: &str) -> Res<&str, &str> {
-    delimited(
-        multispace0,
-        recognize(pair(
-            tag("stmt"),
-            many0_count(alt((alphanumeric1, tag("_")))),
-        )),
-        multispace0,
-    )(input)
+    recognize(pair(
+        tag("stmt"),
+        many0_count(alt((alphanumeric1, tag("_")))),
+    ))(input)
 }
