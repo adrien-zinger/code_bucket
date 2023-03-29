@@ -1,0 +1,11 @@
+[package]
+name = "build_with_jsc"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rusty_jsc = { path = "../../rusty_jsc" }
+rusty_jsc_macros = { path = "../../rusty_jsc/macros" }
+rusty_jsc_sys = { path = "../../rusty_jsc/sys" }
