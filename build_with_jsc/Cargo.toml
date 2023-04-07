@@ -9,3 +9,4 @@ edition = "2021"
 rusty_jsc = { path = "../../rusty_jsc" }
 rusty_jsc_macros = { path = "../../rusty_jsc/macros" }
 rusty_jsc_sys = { path = "../../rusty_jsc/sys" }
+maybe_static = { path = "../../maybe_static" }
