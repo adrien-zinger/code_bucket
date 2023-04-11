@@ -20,6 +20,103 @@ fn log(context: JSContext, _function: JSObject, _this: JSObject, arguments: Vec<
     });
 }
 
+/*
+
+TODO
+
+require(X) from module at path Y
+1. If X is a core module,
+   a. return the core module
+   b. STOP
+2. If X begins with '/'
+   a. set Y to be the file system root
+3. If X begins with './' or '/' or '../'
+   a. LOAD_AS_FILE(Y + X)
+   b. LOAD_AS_DIRECTORY(Y + X)
+   c. THROW "not found"
+4. If X begins with '#'
+   a. LOAD_PACKAGE_IMPORTS(X, dirname(Y))
+5. LOAD_PACKAGE_SELF(X, dirname(Y))
+6. LOAD_NODE_MODULES(X, dirname(Y))
+7. THROW "not found"
+
+LOAD_AS_FILE(X)
+1. If X is a file, load X as its file extension format. STOP
+2. If X.js is a file, load X.js as JavaScript text. STOP
+3. If X.json is a file, parse X.json to a JavaScript Object. STOP
+4. If X.node is a file, load X.node as binary addon. STOP
+
+LOAD_INDEX(X)
+1. If X/index.js is a file, load X/index.js as JavaScript text. STOP
+2. If X/index.json is a file, parse X/index.json to a JavaScript object. STOP
+3. If X/index.node is a file, load X/index.node as binary addon. STOP
+
+LOAD_AS_DIRECTORY(X)
+1. If X/package.json is a file,
+   a. Parse X/package.json, and look for "main" field.
+   b. If "main" is a falsy value, GOTO 2.
+   c. let M = X + (json main field)
+   d. LOAD_AS_FILE(M)
+   e. LOAD_INDEX(M)
+   f. LOAD_INDEX(X) DEPRECATED
+   g. THROW "not found"
+2. LOAD_INDEX(X)
+
+LOAD_NODE_MODULES(X, START)
+1. let DIRS = NODE_MODULES_PATHS(START)
+2. for each DIR in DIRS:
+   a. LOAD_PACKAGE_EXPORTS(X, DIR)
+   b. LOAD_AS_FILE(DIR/X)
+   c. LOAD_AS_DIRECTORY(DIR/X)
+
+NODE_MODULES_PATHS(START)
+1. let PARTS = path split(START)
+2. let I = count of PARTS - 1
+3. let DIRS = []
+4. while I >= 0,
+   a. if PARTS[I] = "node_modules" CONTINUE
+   b. DIR = path join(PARTS[0 .. I] + "node_modules")
+   c. DIRS = DIR + DIRS
+   d. let I = I - 1
+5. return DIRS + GLOBAL_FOLDERS
+
+LOAD_PACKAGE_IMPORTS(X, DIR)
+1. Find the closest package scope SCOPE to DIR.
+2. If no scope was found, return.
+3. If the SCOPE/package.json "imports" is null or undefined, return.
+4. let MATCH = PACKAGE_IMPORTS_RESOLVE(X, pathToFileURL(SCOPE),
+  ["node", "require"]) defined in the ESM resolver.
+5. RESOLVE_ESM_MATCH(MATCH).
+
+LOAD_PACKAGE_EXPORTS(X, DIR)
+1. Try to interpret X as a combination of NAME and SUBPATH where the name
+   may have a @scope/ prefix and the subpath begins with a slash (`/`).
+2. If X does not match this pattern or DIR/NAME/package.json is not a file,
+   return.
+3. Parse DIR/NAME/package.json, and look for "exports" field.
+4. If "exports" is null or undefined, return.
+5. let MATCH = PACKAGE_EXPORTS_RESOLVE(pathToFileURL(DIR/NAME), "." + SUBPATH,
+   `package.json` "exports", ["node", "require"]) defined in the ESM resolver.
+6. RESOLVE_ESM_MATCH(MATCH)
+
+LOAD_PACKAGE_SELF(X, DIR)
+1. Find the closest package scope SCOPE to DIR.
+2. If no scope was found, return.
+3. If the SCOPE/package.json "exports" is null or undefined, return.
+4. If the SCOPE/package.json "name" is not the first segment of X, return.
+5. let MATCH = PACKAGE_EXPORTS_RESOLVE(pathToFileURL(SCOPE),
+   "." + X.slice("name".length), `package.json` "exports", ["node", "require"])
+   defined in the ESM resolver.
+6. RESOLVE_ESM_MATCH(MATCH)
+
+RESOLVE_ESM_MATCH(MATCH)
+1. let RESOLVED_PATH = fileURLToPath(MATCH)
+2. If the file at RESOLVED_PATH exists, load RESOLVED_PATH as its extension
+   format. STOP
+3. THROW "not found"
+
+ */
+
 #[callback]
 fn require(
     context: JSContext,
@@ -27,8 +124,25 @@ fn require(
     _this: JSObject,
     arguments: Vec<JSValue>,
 ) -> JSValue {
-    let global_objects = maybe_static_unsafe!(HashMap<String, JSObject>, Default::default);
+    // Create a Meyer's singleton, unsafe because it can't be used in a multiphreaded
+    // context. If a multithread context appear, use maybe_static with an Arc/Mutex.
+    let global_objects = maybe_static_unsafe!(HashMap<String, JSObject>);
 
+    /*
+
+       TODO:
+       Modules are cached based on their resolved filename. Since modules may resolve
+       to a different filename based on the location of the calling module (loading
+       from node_modules folders), it is not a guarantee that require('foo')
+       will always return the exact same object, if it would resolve to different files.
+
+
+       Additionally, on case-insensitive file systems or operating systems,
+       different resolved filenames can point to the same file, but the cache
+       will still treat them as different modules and will reload the file multiple
+       times. For example, require('./foo') and require('./FOO') return two different
+       objects, irrespective of whether or not ./foo and ./FOO are the same file.
+    */
     if let Some(required) = arguments.first() {
         if required.is_string(&context) {
             let path = required.to_string(&context);
@@ -46,7 +160,17 @@ fn require(
             }
 
             let mut new_context = context.split();
-            init(&context, &mut new_context.get_global_object());
+            init(&mut new_context);
+            let mut new_require: JSObject = new_context
+                .get_global_object()
+                .get_property(&new_context, "require")
+                .unwrap()
+                .into();
+            let main_module = context
+                .get_global_object()
+                .get_property(&context, "module")
+                .unwrap();
+            new_require.set_property(&new_context, "main", main_module);
             global_objects.insert(path.clone(), new_context.get_global_object());
 
             let script = read_to_string(&path).expect("file not found");
@@ -66,7 +190,8 @@ fn require(
     panic!("error require module")
 }
 
-fn init(context: &JSContext, global: &mut JSObject) {
+fn init(context: &mut JSContext) {
+    let global = &mut context.get_global_object();
     let mut console = JSObject::class(context, "console", None);
     console.set_property(context, "log", JSValue::callback(context, Some(log)));
     global.set_property(context, "console", console.into());
@@ -84,11 +209,27 @@ fn init(context: &JSContext, global: &mut JSObject) {
     );
 }
 
+fn init_main(context: &mut JSContext) {
+    init(context);
+    let global = &mut context.get_global_object();
+    let module = global.get_property(context, "module").unwrap();
+    let mut require: JSObject = global.get_property(context, "require").unwrap().into();
+    require.set_property(context, "main", module);
+}
+
+fn _deinit(context: &mut JSContext) {
+    let global = &mut context.get_global_object();
+
+    global.delete_property(context, "console");
+    global.delete_property(context, "module");
+    global.delete_property(context, "exports");
+    global.delete_property(context, "require");
+}
+
 fn main() {
     let mut context = JSContext::default();
-    let mut global = context.get_global_object();
 
-    init(&context, &mut global);
+    init_main(&mut context);
 
     let default_index = String::from("./index.js");
     let args: Vec<String> = std::env::args().collect();
@@ -96,4 +237,5 @@ fn main() {
     println!("open {filename}");
     let script = read_to_string(filename).expect("input file not found");
     context.evaluate_script(&script, 1).expect("failed");
+    //_deinit(&mut context);
 }
