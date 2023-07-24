@@ -12,6 +12,7 @@ struct node {
 struct queue {
 	struct node * _Atomic head;
 	struct node * _Atomic tail;
+	atomic_int length;
 };
 
 void push(struct queue *queue, void *content)
@@ -32,6 +33,7 @@ void push(struct queue *queue, void *content)
 		if (atomic_compare_exchange_strong(&tail->next, &next, node))
 		{
 			atomic_compare_exchange_strong(&queue->tail, &tail, node);
+			atomic_fetch_add(&queue->length, 1);
 			return;
 		}
 	}
@@ -61,6 +63,7 @@ void *pop(struct queue *queue)
 			atomic_store(&next->count, head->count + 1);
 			if (atomic_compare_exchange_strong(&queue->head, &head, next))
 			{
+				atomic_fetch_sub(&queue->length, 1);
 				free(head);
 				return content;
 			}
@@ -73,7 +76,8 @@ struct queue create_queue()
 	struct node *dummy = malloc(sizeof(struct node));
 	struct queue q = {
 		.head = dummy,
-		.tail = dummy
+		.tail = dummy,
+		.length = 0
 	};
 	return q;
 }
@@ -89,10 +93,12 @@ int main(void)
 	struct queue q = create_queue();
 	push(&q, &one);
 	push(&q, &two);
+	assert(q.length == 2);
 	push(&q, &three);
 	assert(pop(&q) == &one);
 	assert(pop(&q) == &two);
 	assert(pop(&q) == &three);
+	assert(q.length == 0);
 
 	push(&q, &one);
 	push(&q, &two);
