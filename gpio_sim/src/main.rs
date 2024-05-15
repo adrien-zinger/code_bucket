@@ -26,6 +26,7 @@ fn main() {
         std::process::exit(0);
     }).unwrap();
 
+    print!("gpio chip created:\n\t- set high\n\t- set low\n\t- exit\n> \n");
     loop {
         let mut line = String::new();
         let stdin = std::io::stdin();
@@ -36,6 +37,7 @@ fn main() {
             "set low\n" => set_pull_cmd(Level::Low),
             _ => println!("pass unknown cmd")
         }
+        line.clear();
     }
     use_singleton().0.take(); // cleanup
 }
