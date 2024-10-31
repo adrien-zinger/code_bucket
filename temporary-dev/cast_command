@@ -1,0 +1,11 @@
+{ 
+    "actor": "test", 
+    "opt": "test", 
+    "cost": [{ 
+	"num": 0, 
+        "construct": 0, 
+        "medium": 0, 
+        "research": 0, 
+        "prod": 0, 
+    }] 
+} 
