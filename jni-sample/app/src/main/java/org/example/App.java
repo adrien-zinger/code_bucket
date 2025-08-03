@@ -3,18 +3,33 @@
  */
 package org.example;
 
+import java.util.*;
+
 public class App {
 
-	public static class HelloNative {
+	public static class MyItem {
+		int value = 0;
+		HashMap<String, Float> floatValues = new HashMap<String, Float>();
+	}
+
+	public static class MyItemCollection {
+		HashMap<String, MyItem> inner = new HashMap<String, MyItem>();
+		public MyItem get(String key) {
+			return inner.get(key);
+		}
+	}
+
+	public static class Native {
 		static {
 			System.loadLibrary("sample");
 		}
 
-		public native void sayHello();
+		public native void process(MyItemCollection items);
 	}
 
     public static void main(String[] args) {
-		new HelloNative().sayHello();
+		var items = new MyItemCollection();
+		new Native().process(items);
     }
 
 }
